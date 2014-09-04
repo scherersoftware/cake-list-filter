@@ -1,41 +1,38 @@
 <?php
+namespace ListFilter\Controller\Component;
+use Cake\Controller\Component;
+use Cake\Utility\Hash;
+use Cake\Routing\Router;
+
+
 class ListFilterComponent extends Component {
-	// Einstellungen
-	public $settings = array();
+
+	public $components = ['Paginator'];
+
+	protected $_controller;
 	
-	// Referenz auf den aufrufenden Controller
-	private $Controller;
-	
-	public function initialize(Controller $controller, $settings = array()) {
-		$this->settings = Set::merge($this->settings, $settings);
-		$this->Controller = $controller;
+	public function initialize(\Cake\Event\Event $event) {
+		$this->_controller = $event->subject();
 	}
 
 	public $defaultListFilter = array(
-		// Typ des Eingabefelds
 		'type' => 'text', 
-		// Wenn es ein SELECT ist, dann hier die möglichen Werte als K=>V einfügen
 		'options' => array(),
-		// Formularfeld anzeigen. Bei Specials dieses einfach auf false setzen
 		'showFormField' => true,
-		// In Selects auch einen leeren Eintrag anzeigen
 		'empty' => true,
-		// Wenn der Wert mit einem speziellen DB-Feld verglichen werden soll (z.B. 'DATE(Log.created)')
 		'conditionField' => '',
-		// Zusätzliche Optionen für $this->Form->input(). Bei betweenDates können getrennte Optionen für from/to übergeben werden
 		'inputOptions' => array(),
 		'searchType' => 'wildcard'
 	);
 
-	public function startup(Controller $controller) {
-		if(isset($this->Controller->listFilters[$this->Controller->action])) {
+	public function startup(\Cake\Event\Event $event) {
+		if(isset($this->_controller->listFilters[$this->_controller->request->action])) {
 			$this->listFilters = $this->getFilters();
 
-
-			// POST-Daten in URL umwandeln und weiterleiten
-			if(!empty($this->Controller->data['Filter'])) {
+			// PRG
+			if($this->_controller->request->is('post') && !empty($this->_controller->request->data['Filter'])) {
 				$urlParams = array();
-				foreach($this->Controller->data['Filter'] as $model => $fields) {
+				foreach($this->_controller->request->data['Filter'] as $model => $fields) {
 					foreach($fields as $field => $value) {
 						if(is_array($value)) {
 							$value = "{$value['year']}-{$value['month']}-{$value['day']}";
@@ -45,25 +42,27 @@ class ListFilterComponent extends Component {
 						if($value !== 0 && $value !== '0' && empty($value)) {
 							continue;
 						}
-						$urlParams["Filter.{$model}.{$field}"] = $value;
+						$urlParams["Filter-{$model}-{$field}"] = $value;
 					}
 				}
-				$this->Controller->redirect(Router::url($urlParams));
+				return $this->_controller->redirect(Router::url($urlParams));
 			}
-			// Filtereinstellungen aus URL aufbereiten
+
 			$filterActive = false;
-			if(!empty($this->Controller->passedArgs)) {
+			
+			if(!empty($this->_controller->request->query)) {
 				$filters = array();
-				foreach($this->Controller->passedArgs as $arg => $value) {
-					if(substr($arg, 0, 7) == 'Filter.') {
+
+				foreach($this->_controller->request->query as $arg => $value) {
+					if(substr($arg, 0, 7) == 'Filter-') {
 						unset($betweenDate);
-						list($filter, $model, $field) = explode('.', $arg);
+						list($filter, $model, $field) = explode('-', $arg);
 
 						if(substr($arg, -1) == ']') {
 							if(preg_match('/^(.*)\[\d+\]$/', $arg, $matches)) {
 								$fieldArg = $matches[1];
 								$value = array();
-								foreach($this->Controller->passedArgs as $a2 => $v2) {
+								foreach($this->_controller->passedArgs as $a2 => $v2) {
 									if(substr($a2, 0, strlen($fieldArg)) == $fieldArg) {
 										$value[] = $v2;
 									}
@@ -77,24 +76,23 @@ class ListFilterComponent extends Component {
 							$field = $matches[1];
 						}
 						if(isset($this->listFilters['fields']["{$model}.{$field}"])) {
-							$options = $this->listFilters['fields']["{$model}.{$field}"];
+							$options = Hash::merge([
+								'searchType' => 'wildcard'
+							], $this->listFilters['fields']["{$model}.{$field}"]);
 							if(is_string($value)) {
 								$value = trim($value);
 							}
 
-							// Der Wert, der ins Formularfeld kommt
 							$viewValue = $value;
 							$conditionField = "{$model}.{$field}";
 
-							// Wenn der Wert leer ist, rausnehmen
 							if(empty($value) && $value != 0) {
 								continue;
 							}
-							// Wenn der Wert nicht in den erlaubten Werten definiert ist
-							if($options['searchType'] != 'multipleselect' && !empty($options['options']) && !isset($options['options'][$value])) {
+							if(!empty($options['options']) && $options['searchType'] != 'multipleselect' && !isset($options['options'][$value])) {
 								continue;
 							}
-							// Wenn wildcards erlaubt sind, dann LIKE-Condition
+
 							$fulltextSearch = false;
 							if($options['searchType'] == 'wildcard') {
 								//fulltext search
@@ -115,10 +113,10 @@ class ListFilterComponent extends Component {
 								$conditionField = 'DATE(' . $conditionField . ')';
 								if($betweenDate == 'from') {
 									$operator = '>=';
-									#$this->Controller->data['Filter'][$model][$field . '_to'] = '';
+									#$this->_controller->data['Filter'][$model][$field . '_to'] = '';
 								} else if($betweenDate == 'to') {
 									$operator = '<=';
-									#$this->Controller->data['Filter'][$model][$field . '_from'] = '';
+									#$this->_controller->data['Filter'][$model][$field . '_from'] = '';
 								}
 								if(!empty($options['conditionField'])) {
 									$conditionField = $options['conditionField'];
@@ -127,8 +125,8 @@ class ListFilterComponent extends Component {
 
 								// Workaround für FormHelper-Notices (Ticket #218)
 								$otherKey = $betweenDate == 'from' ? '_to' : '_from';
-								if(empty($this->Controller->data['Filter'][$model][$field . $otherKey])) {
-									// $this->Controller->data['Filter'][$model][$field . $otherKey] = array('year' => null, 'month' => null, 'day' => null);
+								if(empty($this->_controller->data['Filter'][$model][$field . $otherKey])) {
+									// $this->_controller->data['Filter'][$model][$field . $otherKey] = array('year' => null, 'month' => null, 'day' => null);
 								}
 
 								list($year, $month, $day) = explode('-', $value);
@@ -137,37 +135,40 @@ class ListFilterComponent extends Component {
 							}
 							else if($options['searchType'] == 'afterDate') {
 								$conditionField .= ' >=';
-								list($year, $month, $day) = explode('-', $value);
-								$viewValue = compact('year', 'month', 'day');
+								
+								if(preg_match('/^[\d]{4}-[\d]{2}-[\d]{2}$/', $value)) {
+									list($year, $month, $day) = explode('-', $value);
+									$viewValue = compact('year', 'month', 'day');
+								}
 							}
 							if(!$fulltextSearch) {
 								$filters[$conditionField] = $value;
 							}
-							$this->Controller->request->data['Filter'][$model][$field] = $viewValue;
+							$this->_controller->request->data['Filter'][$model][$field] = $viewValue;
 						}
 					}
 				}
-				$filterActive = !empty($filters);
-				$conditions = isset($this->Controller->paginate['conditions']) ? $this->Controller->paginate['conditions'] : array();
 
-				$this->Controller->Paginator->settings = Hash::merge($this->Controller->Paginator->settings, [
-					'conditions' => Set::merge($conditions, $filters)
+				$filterActive = !empty($filters);
+				$conditions = isset($this->_controller->paginate['conditions']) ? $this->_controller->paginate['conditions'] : [];
+
+				$this->_controller->paginate = Hash::merge($this->_controller->paginate, [
+					'conditions' => Hash::merge($conditions, $filters)
 				]);
 			}
 
 			foreach($this->listFilters['fields'] as $field => $options) {
-				// Workaround, da Set::merge numerisch indizierte Arrays, wie die von find(list), neu indiziert
 				if(!empty($this->listFilters['fields'][$field]['options'])) {
 					$tmpOptions = $this->listFilters['fields'][$field]['options'];
 				}
-				$this->listFilters['fields'][$field] = Set::merge($this->defaultListFilter, $options);
+				$this->listFilters['fields'][$field] = Hash::merge($this->defaultListFilter, $options);
 				if(isset($tmpOptions)) {
 					$this->listFilters['fields'][$field]['options'] = $tmpOptions;
 				}
 				unset($tmpOptions);
 			}
-			$this->Controller->set('filters', $this->listFilters['fields']);
-			$this->Controller->set('filterActive', $filterActive);
+			$this->_controller->set('filters', $this->listFilters['fields']);
+			$this->_controller->set('filterActive', $filterActive);
 		}
 	}
 
@@ -176,7 +177,7 @@ class ListFilterComponent extends Component {
  * @return array 
  */
 	public function getFilters() {
-		$filters = $this->Controller->listFilters[$this->Controller->action];
+		$filters = $this->_controller->listFilters[$this->_controller->request->action];
 		foreach($filters['fields'] as $field => &$fieldConfig) {
 			if(isset($fieldConfig['type']) && $fieldConfig['type'] == 'select' && !isset($fieldConfig['searchType'])) {
 				$fieldConfig['searchType'] = 'select';
@@ -185,4 +186,3 @@ class ListFilterComponent extends Component {
 		return $filters;
 	}
 }
-?>

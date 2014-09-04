@@ -1,5 +1,11 @@
 <?php
-class ListFilterHelper extends AppHelper {
+namespace ListFilter\View\Helper;
+use Cake\View\Helper;
+use Cake\Utility\Hash;
+use Cake\Utility\Inflector;
+use Cake\Routing\Router;
+
+class ListFilterHelper extends Helper {
 	public $helpers = array('Html', 'Form', 'Utils');
 	private $filters = array();
 	
@@ -16,7 +22,7 @@ class ListFilterHelper extends AppHelper {
 			$this->setFilters($filters);
 		}
 		if(!empty($options)) {
-			$this->_options = Set::merge($this->_options, $options);
+			$this->_options = Hash::merge($this->_options, $options);
 		}
 		$ret = $this->open();
 		$ret.= $this->renderAll();
@@ -54,14 +60,14 @@ class ListFilterHelper extends AppHelper {
 		$ret = [];
 		switch($options['searchType']) {
 			case 'afterDate':
-			$inputOptions = Set::merge(array(
-				'label' => __($options['label']),
-				'type' => $options['type'],
-				'options' => $options['options'],
-				'empty' => $options['empty'],
-				'type' => 'date'
-			), $options['inputOptions']);
-			$ret[] = $this->Form->input('Filter.' . $field, $inputOptions);;
+				$inputOptions = Hash::merge(array(
+					'label' => __($options['label']),
+					'type' => $options['type'],
+					'options' => $options['options'],
+					'empty' => $options['empty'],
+					'type' => 'date'
+				), $options['inputOptions']);
+				$ret[] = $this->Form->input('Filter.' . $field, $inputOptions);;
 			break;
 			case 'betweenDates':
 				$fromOptions = array(
@@ -75,10 +81,10 @@ class ListFilterHelper extends AppHelper {
 					'type' => 'date'
 				);
 				if(!empty($options['inputOptions']['from'])) {
-					$fromOptions = Set::merge($fromOptions, $options['inputOptions']['from']);
+					$fromOptions = Hash::merge($fromOptions, $options['inputOptions']['from']);
 				}
 				if(!empty($options['inputOptions']['to'])) {
-					$toOptions = Set::merge($toOptions, $options['inputOptions']['to']);
+					$toOptions = Hash::merge($toOptions, $options['inputOptions']['to']);
 				}
 
 				$ret[] =  $this->Form->input('Filter.' . $field . '_from', $fromOptions);
@@ -86,7 +92,7 @@ class ListFilterHelper extends AppHelper {
 
 				break;
 			case 'multipleselect':
-				$inputOptions = Set::merge(array(
+				$inputOptions = Hash::merge(array(
 					'label' => __($options['label']),
 					'type' => 'select',
 					'options' => $options['options'],
@@ -97,7 +103,7 @@ class ListFilterHelper extends AppHelper {
 				$ret[] = $this->Form->input('Filter.' . $field, $inputOptions);
 				break;
 			default:
-				$inputOptions = Set::merge(array(
+				$inputOptions = Hash::merge(array(
 					'label' => __($options['label']),
 					'type' => $options['type'],
 					'options' => $options['options'],
@@ -115,7 +121,7 @@ class ListFilterHelper extends AppHelper {
 		$classes = 'list-filter clearfix well ';
 
 		if($title == null) {
-			$title = __('filter_fieldset_title');
+			$title = __('list_filter.filter_fieldset_title');
 		}
 
 		if($filterActive) {
@@ -131,7 +137,7 @@ class ListFilterHelper extends AppHelper {
 		$ret.= "</div>";
 		$ret.= "<hr style='clear:both'><div class='content'>";
 		
-		$options = Set::merge(array('url' => $this->here), $this->_options['formActionParams']);
+		$options = Hash::merge(array('url' => $this->here), $this->_options['formActionParams']);
 		$ret.= $this->Form->create('Filter', $options);
 		return $ret;
 	}	
@@ -162,7 +168,7 @@ class ListFilterHelper extends AppHelper {
 		if(!$title) {
 			$title = __('list_filter.reset');
 		}
-		$params = $this->params['named'];
+		$params = $this->_View->request->query;
 		if(!empty($params)) {
 			foreach($params as $field => $value) {
 				if(substr($field, 0, 7) == 'Filter.') {
@@ -170,8 +176,8 @@ class ListFilterHelper extends AppHelper {
 				}
 			}
 		}
-		$params['controller'] = Inflector::underscore($this->params->controller);
-		$params['action'] = $this->params->action;
+		$params['controller'] = Inflector::underscore($this->_View->request->controller);
+		$params['action'] = $this->request->action;
 		return $this->Html->link($title, Router::url($params), array('class' => 'btn btn-default btn-mini'));
 	}
 	
@@ -182,7 +188,7 @@ class ListFilterHelper extends AppHelper {
  * @return array
  */	
 	public function addListFilterParams(array $url) {
-		foreach($this->_View->params['named'] as $key => $value) {
+		foreach($this->_View->request->query as $key => $value) {
 			if(substr($key, 0, 7) == 'Filter.' || in_array($key, ['page', 'sort', 'direction'])) {
 				$url[ $key ] = $value;
 			}
@@ -205,7 +211,7 @@ class ListFilterHelper extends AppHelper {
 		}
 		$options = array('class'=>'btn btn-default btn-sm');
 		if(!empty($config)) {
-			$options = Set::merge($options, $config);
+			$options = Hash::merge($options, $config);
 		}
 		$url = $this->addListFilterParams($url);
 		$button = $this->Utils->backButton($title, $url, $options);
