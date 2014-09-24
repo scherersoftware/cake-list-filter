@@ -226,7 +226,7 @@ class ListFilterHelper extends Helper {
 		$params = $this->_View->request->query;
 		if (!empty($params)) {
 			foreach ($params as $field => $value) {
-				if (substr($field, 0, 7) == 'Filter.') {
+				if (substr($field, 0, 7) == 'Filter-') {
 					unset($params[$field]);
 				}
 			}
