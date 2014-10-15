@@ -24,11 +24,10 @@ class ListFilterComponent extends Component {
 /**
  * Initializes the instance
  *
- * @param Event $event event
+ * @param array $config Component configuration
  * @return void
  */
-	public function initialize(\Cake\Event\Event $event) {
-		$this->_controller = $event->subject();
+	public function initialize(array $config) {
 	}
 
 /**
@@ -38,6 +37,7 @@ class ListFilterComponent extends Component {
  * @return void
  */
 	public function startup(\Cake\Event\Event $event) {
+		$this->_controller = $event->subject();
 		if (isset($this->_controller->listFilters[$this->_controller->request->action])) {
 			$this->listFilters = $this->getFilters();
 
