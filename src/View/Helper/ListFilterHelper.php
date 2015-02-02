@@ -40,9 +40,12 @@ class ListFilterHelper extends Helper {
 		if (!empty($options)) {
 			$this->_options = Hash::merge($this->_options, $options);
 		}
-		$ret = $this->open();
-		$ret .= $this->renderAll();
-		$ret .= $this->close();
+		$filterBox = $this->open();
+		$filterBox .= $this->renderAll();
+		$filterBox .= $this->close();
+
+        $ret = $this->_View->element('ListFilter.wrapper', compact('filterBox'));
+
 		return $ret;
 	}
 
@@ -154,9 +157,9 @@ class ListFilterHelper extends Helper {
 	public function open($title = null) {
 		$filterActive = (isset($this->_View->viewVars['filterActive'])
 							&& $this->_View->viewVars['filterActive'] === true);
-		$classes = 'list-filter clearfix well ';
+		$classes = '';
 
-		if ($title == null) {
+		if (!$title) {
 			$title = __d('list_filter', 'list_filter.filter_fieldset_title');
 		}
 
@@ -165,13 +168,16 @@ class ListFilterHelper extends Helper {
 		} else {
 			$classes .= ' closed';
 		}
-		$ret = "<div class='{$classes}'>";
+		$ret = '<div class="panel panel-default list-filter ' . $classes . '">';
 
-		$ret .= "<div class='pull-left'><h3>{$title}</h3></div>";
-		$ret .= "<div class='pull-right'>";
-			$ret .= $this->Html->link($filterActive ? __d('list_filter', 'list_filter.close') : __d('list_filter', 'list_filter.open'), 'javascript:', array('class' => 'btn btn-xs btn-primary toggle'));
-		$ret .= "</div>";
-		$ret .= "<hr style='clear:both'><div class='content'>";
+		// Panel Heading
+		$ret .= '<div class="panel-heading">' . $title;
+		$ret.= '<div class="pull-right">' . '<a class="btn btn-xs toggle-btn"><i class="fa fa-plus"></i></a>' . '</div>';
+
+		$ret.= '</div>';
+
+		// Panel Body
+		$ret .= '<div class="panel-body" style="display: none">';
 
 		$options = Hash::merge(array('url' => $this->here), $this->_options['formActionParams']);
 		$ret .= $this->Form->create('Filter', $options);
@@ -187,7 +193,6 @@ class ListFilterHelper extends Helper {
  */
 	public function close($includeButton = true, $includeResetLink = true) {
 		$ret = '<div class="submit-group">';
-		$ret .= '<span></span>';
 		if ($includeButton) {
 			$ret .= $this->button();
 		}
@@ -210,7 +215,7 @@ class ListFilterHelper extends Helper {
 		if (!$title) {
 			$title = __d('list_filter', 'list_filter.search');
 		}
-		return $this->Form->submit(__d('list_filter', $title), array('div' => false, 'class' => 'btn btn-mini btn-primary'));
+		return $this->Form->button(__d('list_filter', $title), array('div' => false, 'class' => 'btn btn-xs btn-primary'));
 	}
 
 /**
@@ -233,7 +238,7 @@ class ListFilterHelper extends Helper {
 		}
 		$params['controller'] = Inflector::underscore($this->_View->request->controller);
 		$params['action'] = $this->request->action;
-		return $this->Html->link($title, Router::url($params), array('class' => 'btn btn-default btn-mini'));
+		return $this->Html->link($title, Router::url($params), array('class' => 'btn btn-default btn-xs'));
 	}
 
 /**
