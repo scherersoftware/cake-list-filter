@@ -91,7 +91,7 @@ class ListFilterHelper extends Helper {
 		switch($options['searchType']) {
 			case 'afterDate':
 				$inputOptions = Hash::merge(array(
-					'label' => __($options['label']),
+					'label' => $options['label'],
 					'type' => $options['type'],
 					'options' => $options['options'],
 					'empty' => $options['empty'],
@@ -101,12 +101,12 @@ class ListFilterHelper extends Helper {
 			break;
 			case 'betweenDates':
 				$fromOptions = array(
-					'label' => __($options['label']) . ' ' . __('from'),
+					'label' => $options['label'] . ' ' . __d('list_filter', 'from'),
 					'empty' => $options['empty'],
 					'type' => 'date'
 				);
 				$toOptions = array(
-					'label' => __($options['label']) . ' ' . __('to'),
+					'label' => $options['label'] . ' ' . __d('list_filter', 'to'),
 					'empty' => $options['empty'],
 					'type' => 'date'
 				);
@@ -123,7 +123,7 @@ class ListFilterHelper extends Helper {
 				break;
 			case 'multipleselect':
 				$inputOptions = Hash::merge(array(
-					'label' => __($options['label']),
+					'label' => $options['label'],
 					'type' => 'select',
 					'options' => $options['options'],
 					'empty' => $options['empty'],
@@ -134,7 +134,7 @@ class ListFilterHelper extends Helper {
 				break;
 			default:
 				$inputOptions = Hash::merge(array(
-					'label' => __($options['label']),
+					'label' => $options['label'],
 					'type' => $options['type'],
 					'options' => $options['options'],
 					'empty' => $options['empty']
@@ -157,7 +157,7 @@ class ListFilterHelper extends Helper {
 		$classes = 'list-filter clearfix well ';
 
 		if ($title == null) {
-			$title = __('list_filter.filter_fieldset_title');
+			$title = __d('list_filter', 'list_filter.filter_fieldset_title');
 		}
 
 		if ($filterActive) {
@@ -169,7 +169,7 @@ class ListFilterHelper extends Helper {
 
 		$ret .= "<div class='pull-left'><h3>{$title}</h3></div>";
 		$ret .= "<div class='pull-right'>";
-			$ret .= $this->Html->link($filterActive ? __('list_filter.close') : __('list_filter.open'), 'javascript:', array('class' => 'btn btn-xs btn-primary toggle'));
+			$ret .= $this->Html->link($filterActive ? __d('list_filter', 'list_filter.close') : __d('list_filter', 'list_filter.open'), 'javascript:', array('class' => 'btn btn-xs btn-primary toggle'));
 		$ret .= "</div>";
 		$ret .= "<hr style='clear:both'><div class='content'>";
 
@@ -208,9 +208,9 @@ class ListFilterHelper extends Helper {
  */
 	public function button($title = null) {
 		if (!$title) {
-			$title = __('list_filter.search');
+			$title = __d('list_filter', 'list_filter.search');
 		}
-		return $this->Form->submit(__($title), array('div' => false, 'class' => 'btn btn-mini btn-primary'));
+		return $this->Form->submit(__d('list_filter', $title), array('div' => false, 'class' => 'btn btn-mini btn-primary'));
 	}
 
 /**
@@ -221,7 +221,7 @@ class ListFilterHelper extends Helper {
  */
 	public function resetLink($title = null) {
 		if (!$title) {
-			$title = __('list_filter.reset');
+			$title = __d('list_filter', 'list_filter.reset');
 		}
 		$params = $this->_View->request->query;
 		if (!empty($params)) {
