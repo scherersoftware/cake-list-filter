@@ -9,6 +9,8 @@ class ListFilterComponent extends Component {
 
 	public $components = ['Paginator'];
 
+    public $filterActive = false;
+
 	protected $_controller;
 
 	public $defaultListFilter = array(
@@ -64,7 +66,7 @@ class ListFilterComponent extends Component {
 				return $this->_controller->redirect(Router::url($urlParams));
 			}
 
-			$filterActive = false;
+			$this->filterActive = false;
 
 			if (!empty($this->_controller->request->query)) {
 				$filters = array();
@@ -105,7 +107,17 @@ class ListFilterComponent extends Component {
 							if (empty($value) && $value != 0) {
 								continue;
 							}
-							if (!empty($options['options']) && $options['searchType'] != 'multipleselect' && !isset($options['options'][$value])) {
+
+							// Support for hierarchical arrays / optgroup selects
+							$flatOptions = $options['options'];
+							if(is_array(current($options['options']))) {
+								$flatOptions = [];
+								foreach($options['options'] as $group => $valueGroup) {
+									$flatOptions = $flatOptions + $valueGroup;
+								}
+							}
+							
+							if (!empty($options['options']) && $options['searchType'] != 'multipleselect' && !isset($flatOptions[$value])) {
 								continue;
 							}
 
@@ -162,7 +174,7 @@ class ListFilterComponent extends Component {
 					}
 				}
 
-				$filterActive = !empty($filters);
+				$this->filterActive = !empty($filters);
 				$conditions = isset($this->_controller->paginate['conditions']) ? $this->_controller->paginate['conditions'] : [];
 
 				$this->_controller->paginate = Hash::merge($this->_controller->paginate, [
@@ -181,7 +193,7 @@ class ListFilterComponent extends Component {
 				unset($tmpOptions);
 			}
 			$this->_controller->set('filters', $this->listFilters['fields']);
-			$this->_controller->set('filterActive', $filterActive);
+			$this->_controller->set('filterActive', $this->filterActive);
 		}
 	}
 
