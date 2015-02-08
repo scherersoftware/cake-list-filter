@@ -208,6 +208,9 @@ class ListFilterComponent extends Component {
 		} else {
 			$filters = $this->_controller->listFilters[$this->_controller->request->action];
 		}
+		if (empty($filters)) {
+			return [];
+		}
 		foreach ($filters['fields'] as $field => &$fieldConfig) {
 			if (isset($fieldConfig['type']) && $fieldConfig['type'] == 'select' && !isset($fieldConfig['searchType'])) {
 				$fieldConfig['searchType'] = 'select';
