@@ -38,7 +38,9 @@ class ListFilterComponent extends Component {
  */
 	public function startup(\Cake\Event\Event $event) {
 		$this->_controller = $event->subject();
-		if (isset($this->_controller->listFilters[$this->_controller->request->action])) {
+		$controllerListFilters = $this->getFilters();
+
+		if (!empty($controllerListFilters)) {
 			$this->listFilters = $this->getFilters();
 
 			// PRG
@@ -189,7 +191,11 @@ class ListFilterComponent extends Component {
  * @return array 
  */
 	public function getFilters() {
-		$filters = $this->_controller->listFilters[$this->_controller->request->action];
+		if(method_exists($this->_controller, 'getListFilters')) {
+			$filters = $this->_controller->getListFilters($this->_controller->request->action);
+		} else {
+			$filters = $this->_controller->listFilters[$this->_controller->request->action];
+		}
 		foreach ($filters['fields'] as $field => &$fieldConfig) {
 			if (isset($fieldConfig['type']) && $fieldConfig['type'] == 'select' && !isset($fieldConfig['searchType'])) {
 				$fieldConfig['searchType'] = 'select';
