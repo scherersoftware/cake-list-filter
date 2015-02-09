@@ -205,7 +205,7 @@ class ListFilterComponent extends Component {
 	public function getFilters() {
 		if(method_exists($this->_controller, 'getListFilters')) {
 			$filters = $this->_controller->getListFilters($this->_controller->request->action);
-		} else {
+		} elseif (!empty($this->_controller->listFilters[$this->_controller->request->action])) {
 			$filters = $this->_controller->listFilters[$this->_controller->request->action];
 		}
 		if (empty($filters)) {
