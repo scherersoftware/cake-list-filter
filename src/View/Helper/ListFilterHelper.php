@@ -264,7 +264,7 @@ class ListFilterHelper extends Helper {
  * @param array $options link() config
  * @return string
  */
-	public function backToListButton($title = null, array $url = [], array $options = []) {
+	public function backToListButton($title = null, array $url = null, array $options = []) {
 		if (empty($url)) {
 			$url = [
 				'action' => 'index'
@@ -276,8 +276,13 @@ class ListFilterHelper extends Helper {
 
 		$options = Hash::merge([
 			'class' => 'btn btn-default btn-xs',
-			'escape' => false
+			'escape' => false,
+			'additionalClasses' => null
 		], $options);
+
+		if ($options['additionalClasses']) {
+			$options['class'] .= ' ' . $options['additionalClasses'];
+		}
 
 		$url = $this->addListFilterParams($url);
 		$button = $this->Html->link('<i class="fa fa-arrow-left"></i> ' . $title, $url, $options);
