@@ -8,7 +8,7 @@ use Cake\View\Helper;
 
 class ListFilterHelper extends Helper {
 
-	public $helpers = array('Html', 'Form', 'Utils');
+	public $helpers = array('Html', 'Form');
 
 	public $filters = array();
 
@@ -261,21 +261,26 @@ class ListFilterHelper extends Helper {
  *
  * @param string $title button caption
  * @param array $url url to link to
- * @param array $config backButton() config
+ * @param array $options link() config
  * @return string
  */
-	public function backToListButton($title = null, array $url = [], array $config = []) {
+	public function backToListButton($title = null, array $url = [], array $options = []) {
 		if (empty($url)) {
 			$url = [
 				'action' => 'index'
 			];
 		}
-		$options = array('class' => 'btn btn-default btn-sm');
-		if (!empty($config)) {
-			$options = Hash::merge($options, $config);
+		if (!$title) {
+			$title = __('lists.back_to_list');
 		}
+
+		$options = Hash::merge([
+			'class' => 'btn btn-default btn-xs',
+			'escape' => false
+		], $options);
+
 		$url = $this->addListFilterParams($url);
-		$button = $this->Utils->backButton($title, $url, $options);
+		$button = $this->Html->link('<i class="fa fa-arrow-left"></i> ' . $title, $url, $options);
 		return $button;
 	}
 }
