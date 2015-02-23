@@ -70,7 +70,6 @@ class ListFilterComponent extends Component {
 
 			if (!empty($this->_controller->request->query)) {
 				$filters = array();
-
 				foreach ($this->_controller->request->query as $arg => $value) {
 					if (substr($arg, 0, 7) == 'Filter-') {
 						unset($betweenDate);
@@ -181,7 +180,6 @@ class ListFilterComponent extends Component {
 					'conditions' => Hash::merge($conditions, $filters)
 				]);
 			}
-
 			foreach ($this->listFilters['fields'] as $field => $options) {
 				if (!empty($this->listFilters['fields'][$field]['options'])) {
 					$tmpOptions = $this->listFilters['fields'][$field]['options'];
