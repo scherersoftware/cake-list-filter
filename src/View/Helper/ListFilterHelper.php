@@ -271,7 +271,7 @@ class ListFilterHelper extends Helper {
 			];
 		}
 		if (!$title) {
-			$title = __('lists.back_to_list');
+			$title = __('forms.back_to_list');
 		}
 
 		$options = Hash::merge([
