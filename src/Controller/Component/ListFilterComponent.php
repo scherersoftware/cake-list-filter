@@ -108,14 +108,17 @@ class ListFilterComponent extends Component {
 							}
 
 							// Support for hierarchical arrays / optgroup selects
-							$flatOptions = $options['options'];
-							if(is_array(current($options['options']))) {
-								$flatOptions = [];
-								foreach($options['options'] as $group => $valueGroup) {
-									$flatOptions = $flatOptions + $valueGroup;
+							$flatOptions = [];
+							if (isset($options['options'])) {
+								$flatOptions = $options['options'];
+								if(is_array(current($options['options']))) {
+									$flatOptions = [];
+									foreach($options['options'] as $group => $valueGroup) {
+										$flatOptions = $flatOptions + $valueGroup;
+									}
 								}
 							}
-							
+
 							if (!empty($options['options']) && $options['searchType'] != 'multipleselect' && !isset($flatOptions[$value])) {
 								continue;
 							}
