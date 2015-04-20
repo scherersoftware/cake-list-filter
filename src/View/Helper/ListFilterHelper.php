@@ -270,15 +270,20 @@ class ListFilterHelper extends Helper {
 				'action' => 'index'
 			];
 		}
-		if (!$title) {
-			$title = __('forms.back_to_list');
-		}
-
 		$options = Hash::merge([
 			'class' => 'btn btn-default btn-xs',
 			'escape' => false,
-			'additionalClasses' => null
+			'additionalClasses' => null,
+            'useReferer' => false
 		], $options);
+
+        if(!empty($options['useReferer'])) {
+            $url = Router::parse(parse_url(getenv('HTTP_REFERER'), PHP_URL_PATH));
+        }
+        
+		if (!$title) {
+			$title = __('forms.back_to_list');
+		}
 
 		if ($options['additionalClasses']) {
 			$options['class'] .= ' ' . $options['additionalClasses'];
@@ -286,6 +291,5 @@ class ListFilterHelper extends Helper {
 
 		$url = $this->addListFilterParams($url);
 		$button = $this->Html->link('<i class="fa fa-arrow-left"></i> ' . $title, $url, $options);
-		return $button;
-	}
+		retur
 }
