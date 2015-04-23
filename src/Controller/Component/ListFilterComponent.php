@@ -63,9 +63,12 @@ class ListFilterComponent extends Component {
 						$urlParams["Filter-{$model}-{$field}"] = $value;
 					}
 				}
+				$params = $this->_controller->request->query;
+				if (!empty($params)) {
+					$urlParams = Hash::merge($params, $urlParams);
+				}
 				return $this->_controller->redirect(Router::url($urlParams));
 			}
-
 			$this->filterActive = false;
 
 			if (!empty($this->_controller->request->query)) {
@@ -178,7 +181,6 @@ class ListFilterComponent extends Component {
 
 				$this->filterActive = !empty($filters);
 				$conditions = isset($this->_controller->paginate['conditions']) ? $this->_controller->paginate['conditions'] : [];
-
 				$this->_controller->paginate = Hash::merge($this->_controller->paginate, [
 					'conditions' => Hash::merge($conditions, $filters)
 				]);
