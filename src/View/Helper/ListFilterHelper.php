@@ -283,7 +283,6 @@ class ListFilterHelper extends Helper {
             if(!empty($referer['query'])) {
                 $url .= $referer['query'];
             }
-            $url = Router::parse($url);
         }
         
 		if (!$title) {
