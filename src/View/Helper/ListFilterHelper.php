@@ -286,7 +286,7 @@ class ListFilterHelper extends Helper {
         }
         
 		if (!$title) {
-			$title = __('forms.back_to_list');
+			$title = '<span class="button-text">' . __('forms.back_to_list') . '</span>';;
 		}
 
 		if ($options['additionalClasses']) {
