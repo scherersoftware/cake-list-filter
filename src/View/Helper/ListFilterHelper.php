@@ -274,17 +274,13 @@ class ListFilterHelper extends Helper {
 			'class' => 'btn btn-default btn-xs',
 			'escape' => false,
 			'additionalClasses' => null,
-            'useReferer' => false
+			'useReferer' => false
 		], $options);
 
-        if(!empty($options['useReferer']) && $this->request->referer() != '/') {
-            $referer = parse_url($this->request->referer());
-            $url = $referer['path'] . '?';
-            if(!empty($referer['query'])) {
-                $url .= $referer['query'];
-            }
-        }
-        
+		if(!empty($options['useReferer']) && $this->request->referer() != '/') {
+			$url = $this->request->referer();
+		}
+
 		if (!$title) {
 			$title = '<span class="button-text">' . __('forms.back_to_list') . '</span>';;
 		}
@@ -292,10 +288,10 @@ class ListFilterHelper extends Helper {
 		if ($options['additionalClasses']) {
 			$options['class'] .= ' ' . $options['additionalClasses'];
 		}
-        
-        if(empty($options['useReferer'])) {
-            $url = $this->addListFilterParams($url);
-        }
+
+		if(empty($options['useReferer'])) {
+			$url = $this->addListFilterParams($url);
+		}
 		$button = $this->Html->link('<i class="fa fa-arrow-left"></i> ' . $title, $url, $options);
 		return $button;
 	}
