@@ -63,7 +63,11 @@ class ListFilterComponent extends Component {
 						$urlParams["Filter-{$model}-{$field}"] = $value;
 					}
 				}
-				$params = $this->_controller->request->query;
+                $passedArgs = $this->_controller->passedArgs;
+                if (!empty($passedArgs)) {
+                    $urlParams = Hash::merge($passedArgs, $urlParams);
+                }
+                $params = $this->_controller->request->query;
 				if (!empty($params)) {
 					$urlParams = Hash::merge($params, $urlParams);
 				}
@@ -203,7 +207,7 @@ class ListFilterComponent extends Component {
 /**
  * Formats and enriches field configs
  *
- * @return array 
+ * @return array
  */
 	public function getFilters() {
 		if(method_exists($this->_controller, 'getListFilters')) {
