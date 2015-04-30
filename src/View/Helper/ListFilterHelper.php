@@ -215,7 +215,7 @@ class ListFilterHelper extends Helper {
 		if (!$title) {
 			$title = __d('list_filter', 'list_filter.search');
 		}
-		return $this->Form->button(__d('list_filter', $title), array('div' => false, 'class' => 'btn btn-xs btn-primary'));
+		return $this->Form->button( __d('list_filter', ''. $title . ''), array('div' => false, 'class' => 'btn btn-xs btn-primary'));
 	}
 
 /**
@@ -282,7 +282,7 @@ class ListFilterHelper extends Helper {
 		}
 
 		if (!$title) {
-			$title = '<span class="button-text">' . __('forms.back_to_list') . '</span>';;
+			$title = '<span class="button-text">' . __d('list_filter', 'back_to_list') . '</span>';;
 		}
 
 		if ($options['additionalClasses']) {

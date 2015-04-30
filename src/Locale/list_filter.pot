@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
-"POT-Creation-Date: 2015-02-02 14:26+0100\n"
+"POT-Creation-Date: 2015-04-30 10:51+0200\n"
 "PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
 "Last-Translator: NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
@@ -14,31 +14,31 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: /Users/nano/Sites/247runway_backend//View/Helper/ListFilterHelper.php:104
+#: /Users/cleptric/Sites/bo_backend//View/Helper/ListFilterHelper.php:107
 msgid "from"
 msgstr ""
 
-#: /Users/nano/Sites/247runway_backend//View/Helper/ListFilterHelper.php:109
+#: /Users/cleptric/Sites/bo_backend//View/Helper/ListFilterHelper.php:112
 msgid "to"
 msgstr ""
 
-#: /Users/nano/Sites/247runway_backend//View/Helper/ListFilterHelper.php:160
+#: /Users/cleptric/Sites/bo_backend//View/Helper/ListFilterHelper.php:163
 msgid "list_filter.filter_fieldset_title"
 msgstr ""
 
-#: /Users/nano/Sites/247runway_backend//View/Helper/ListFilterHelper.php:172
-msgid "list_filter.close"
-msgstr ""
-
-#: /Users/nano/Sites/247runway_backend//View/Helper/ListFilterHelper.php:172
-msgid "list_filter.open"
-msgstr ""
-
-#: /Users/nano/Sites/247runway_backend//View/Helper/ListFilterHelper.php:211
+#: /Users/cleptric/Sites/bo_backend//View/Helper/ListFilterHelper.php:216
 msgid "list_filter.search"
 msgstr ""
 
-#: /Users/nano/Sites/247runway_backend//View/Helper/ListFilterHelper.php:224
+#: /Users/cleptric/Sites/bo_backend//View/Helper/ListFilterHelper.php:218
+msgid ""
+msgstr ""
+
+#: /Users/cleptric/Sites/bo_backend//View/Helper/ListFilterHelper.php:229
 msgid "list_filter.reset"
+msgstr ""
+
+#: /Users/cleptric/Sites/bo_backend//View/Helper/ListFilterHelper.php:285
+msgid "back_to_list"
 msgstr ""
 
