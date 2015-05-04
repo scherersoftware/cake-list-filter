@@ -5,294 +5,397 @@ use Cake\Routing\Router;
 use Cake\Utility\Hash;
 use Cake\Utility\Inflector;
 use Cake\View\Helper;
+use Cake\View\StringTemplateTrait;
 
-class ListFilterHelper extends Helper {
+class ListFilterHelper extends Helper
+{
+    use StringTemplateTrait;
 
-	public $helpers = array('Html', 'Form');
+    /**
+     * Used Helpers
+     *
+     * @var array
+     */
+    public $helpers = ['Html', 'Form'];
 
-	public $filters = array();
+    /**
+     * ListFilter Config
+     *
+     * @var array
+     */
+    protected $_filters = [];
 
-	protected $_options = array(
-		'formActionParams' => array()
-	);
+    /**
+     * Default Config
+     *
+     * @var array
+     */
+    protected $_defaultConfig = [
+        'formOptions' => [],
+        'includeJavascript' => true,
+        'templates' => [
+            'containerStart' => '<div{{attrs}}>',
+            'containerEnd' => '</div>',
+            'toggleButton' => '<a{{attrs}}><i class="fa fa-plus"></i></a>',
+            'header' => '<div class="panel-heading">{{title}}<div class="pull-right">{{toggleButton}}</div></div>',
+            'contentStart' => '<div{{attrs}}>',
+            'contentEnd' => '</div>',
+            'buttons' => '<div class="submit-group">{{buttons}}</div>'
+        ],
+        'containerClasses' => 'panel panel-default list-filter',
+        'contentClasses' => 'panel-body',
+        'toggleButtonClasses' => 'btn btn-xs toggle-btn',
+        'title' => 'Filter',
+        'filterButtonOptions' => [
+            'div' => false,
+            'class' => 'btn btn-xs btn-primary'
+        ],
+        'resetButtonOptions' => [
+            'class' => 'btn btn-default btn-xs'
+        ]
+    ];
 
-/**
- * Set the current filters
- *
- * @param array &$filters array of allowed filters
- * @return void
- */
-	public function setFilters(&$filters) {
-		$this->filters = $filters;
-	}
+    /**
+     * Returns the filter config
+     *
+     * @return array
+     */
+    public function getFilters()
+    {
+        if ($this->_filters) {
+            return $this->_filters;
+        } elseif (isset($this->_View->viewVars['filters'])) {
+            return $this->_View->viewVars['filters'];
+        }
+        return [];
+    }
 
-/**
- * Render the complete filter widget
- *
- * @param array &$filters Filters ro render
- * @param array $options override options
- * @return string
- */
-	public function renderFilterbox(&$filters = null, $options = array()) {
-		if ($filters) {
-			$this->setFilters($filters);
-		}
-		if (!empty($options)) {
-			$this->_options = Hash::merge($this->_options, $options);
-		}
-		$filterBox = $this->open();
-		$filterBox .= $this->renderAll();
-		$filterBox .= $this->close();
+    /**
+     * Render the complete filter widget
+     *
+     * @param array $filters Filters to render. If none given, it uses a viewVar called "filters"
+     * @return string
+     */
+    public function renderFilterbox($filters = null)
+    {
+        if ($filters) {
+            $this->_filters = $filters;
+        }
 
-        $ret = $this->_View->element('ListFilter.wrapper', compact('filterBox'));
+        $filterBox = $this->openContainer();
+        $filterBox .= $this->openForm();
+        $filterBox .= $this->renderAll();
+        $filterBox .= $this->closeForm();
+        $filterBox .= $this->closeContainer();
 
-		return $ret;
-	}
+        $ret = $this->_View->element('ListFilter.wrapper', [
+            'filterBox' => $filterBox,
+            'options' => $this->config()
+        ]);
 
-/**
- * Render all filter widgets
- *
- * @return string
- */
-	public function renderAll() {
-		$widgets = [];
+        return $ret;
+    }
 
-		foreach ($this->filters as $field => $options) {
-			$w = $this->filterWidget($field, $options);
-			if ($w) {
-				$widgets = array_merge($widgets, $w);
-			}
-		}
-		$ret = '<div class="row">';
-		foreach ($widgets as $i => $widget) {
-			$ret .= '<div class="col-md-6">';
-			$ret .= $widget;
-			$ret .= '</div>';
-			if (($i + 1) % 2 === 0) {
-				$ret .= '</div><div class="row">';
-			}
-		}
-		$ret .= '</div>';
-		return $ret;
-	}
+    /**
+     * Render all filter widgets
+     *
+     * @return string
+     */
+    public function renderAll()
+    {
+        $widgets = [];
 
-/**
- * Outputs a filter widget based on configuration
- *
- * @param string $field The field to filter with
- * @param array $options Options defined in Controller::listFilters()
- * @return string
- */
-	public function filterWidget($field, $options = array()) {
-		if (empty($options)) {
-			$options = $this->filters['field'];
-		}
-		if (!$options['showFormField']) {
-			continue;
-		}
-		$ret = [];
-		switch($options['searchType']) {
-			case 'afterDate':
-				$inputOptions = Hash::merge(array(
-					'label' => $options['label'],
-					'type' => $options['type'],
-					'options' => $options['options'],
-					'empty' => $options['empty'],
-					'type' => 'date'
-				), $options['inputOptions']);
-				$ret[] = $this->Form->input('Filter.' . $field, $inputOptions);
-			break;
-			case 'betweenDates':
-				$fromOptions = array(
-					'label' => $options['label'] . ' ' . __d('list_filter', 'from'),
-					'empty' => $options['empty'],
-					'type' => 'date'
-				);
-				$toOptions = array(
-					'label' => $options['label'] . ' ' . __d('list_filter', 'to'),
-					'empty' => $options['empty'],
-					'type' => 'date'
-				);
-				if (!empty($options['inputOptions']['from'])) {
-					$fromOptions = Hash::merge($fromOptions, $options['inputOptions']['from']);
-				}
-				if (!empty($options['inputOptions']['to'])) {
-					$toOptions = Hash::merge($toOptions, $options['inputOptions']['to']);
-				}
+        foreach ($this->getFilters() as $field => $options) {
+            $w = $this->filterWidget($field, $options, false);
+            if ($w) {
+                $widgets = array_merge($widgets, $w);
+            }
+        }
+        $ret = '<div class="row">';
+        foreach ($widgets as $i => $widget) {
+            $ret .= '<div class="col-md-6">';
+            $ret .= $widget;
+            $ret .= '</div>';
+            if (($i + 1) % 2 === 0) {
+                $ret .= '</div><div class="row">';
+            }
+        }
+        $ret .= '</div>';
+        return $ret;
+    }
 
-				$ret[] = $this->Form->input('Filter.' . $field . '_from', $fromOptions);
-				$ret[] = $this->Form->input('Filter.' . $field . '_to', $toOptions);
+    /**
+     * Outputs a filter widget based on configuration
+     *
+     * @param string $field The field to filter with
+     * @param array $options Options defined in Controller::listFilters()
+     * @param bool $returnString If false, an array of the generated widget markup is being returned
+     * @return string|array Markup string or array of the markup of one or multiple filter input widgets
+     */
+    public function filterWidget($field, $options = [], $returnString = true)
+    {
+        $filters = $this->getFilters();
+        if (empty($options) && !isset($filters[$field])) {
+            trigger_error("No config found for field '{{$field}}'", E_USER_WARNING);
+            return false;
+        }
 
-				break;
-			case 'multipleselect':
-				$inputOptions = Hash::merge(array(
-					'label' => $options['label'],
-					'type' => 'select',
-					'options' => $options['options'],
-					'empty' => $options['empty'],
-					'multiple' => true,
-					'class' => 'select2'
-				), $options['inputOptions']);
-				$ret[] = $this->Form->input('Filter.' . $field, $inputOptions);
-				break;
-			default:
-				$inputOptions = Hash::merge(array(
-					'label' => $options['label'],
-					'type' => $options['type'],
-					'options' => $options['options'],
-					'empty' => $options['empty']
-				), $options['inputOptions']);
-				$ret[] = $this->Form->input('Filter.' . $field, $inputOptions);
-				break;
-		}
-		return $ret;
-	}
+        $options = Hash::merge($filters[$field], $options);
 
-/**
- * Opens the listfilter widget
- *
- * @param string $title Fieldset caption
- * @return string
- */
-	public function open($title = null) {
-		$filterActive = (isset($this->_View->viewVars['filterActive'])
-							&& $this->_View->viewVars['filterActive'] === true);
-		$classes = '';
+        $ret = [];
+        switch($options['searchType']) {
+            case 'betweenDates':
+                $fromOptions = [
+                    'label' => $options['inputOptions']['label'] . ' ' . __d('list_filter', 'from'),
+                    'type' => 'date'
+                ];
+                $toOptions = [
+                    'label' => $options['inputOptions']['label'] . ' ' . __d('list_filter', 'to'),
+                    'type' => 'date'
+                ];
+                if (!empty($options['inputOptions']['from'])) {
+                    $fromOptions = Hash::merge($fromOptions, $options['inputOptions']['from']);
+                }
+                if (!empty($options['inputOptions']['to'])) {
+                    $toOptions = Hash::merge($toOptions, $options['inputOptions']['to']);
+                }
 
-		if (!$title) {
-			$title = __d('list_filter', 'list_filter.filter_fieldset_title');
-		}
+                $ret[] = $this->Form->input('Filter.' . $field . '_from', $fromOptions);
+                $ret[] = $this->Form->input('Filter.' . $field . '_to', $toOptions);
 
-		if ($filterActive) {
-			$classes .= ' opened';
-		} else {
-			$classes .= ' closed';
-		}
-		$ret = '<div class="panel panel-default list-filter ' . $classes . '">';
+                break;
+            case 'multipleselect':
+                $inputOptions = Hash::merge([
+                    'type' => 'select',
+                    'options' => $options['options'],
+                    'multiple' => true,
+                ], $options['inputOptions']);
+                $ret[] = $this->Form->input('Filter.' . $field, $inputOptions);
+                break;
+            default:
+                $inputOptions = Hash::merge([
+                    'options' => isset($options['options']) ? $options['options'] : false,
+                ], $options['inputOptions']);
+                $ret[] = $this->Form->input('Filter.' . $field, $inputOptions);
+                break;
+        }
+        if ($returnString) {
+            return implode("\n", $ret);
+        }
+        return $ret;
+    }
 
-		// Panel Heading
-		$ret .= '<div class="panel-heading">' . $title;
-		$ret.= '<div class="pull-right">' . '<a class="btn btn-xs toggle-btn"><i class="fa fa-plus"></i></a>' . '</div>';
+    /**
+     * Opens the HTML container
+     *
+     * @return HTML
+     */
+    public function openContainer()
+    {
+        $classes = $this->config('containerClasses');
 
-		$ret.= '</div>';
+        $title = __d('list_filter', 'list_filter.filter_fieldset_title');
 
-		// Panel Body
-		$ret .= '<div class="panel-body" style="display: none">';
+        if ($this->filterActive()) {
+            $classes .= ' opened';
+        } else {
+            $classes .= ' closed';
+        }
 
-		$options = Hash::merge(array('url' => $this->here), $this->_options['formActionParams']);
-		$ret .= $this->Form->create('Filter', $options);
-		return $ret;
-	}
+        $ret = $this->templater()->format('containerStart', [
+            'attrs' => $this->templater()->formatAttributes([
+                'class' => $classes
+            ])
+        ]);
+        $ret .= $this->header();
+        $ret .= $this->templater()->format('contentStart', [
+            'attrs' => $this->templater()->formatAttributes([
+                'class' => $this->config('contentClasses')
+            ])
+        ]);
+        return $ret;
+    }
 
-/**
- * Closes the listfilter widget
- *
- * @param bool $includeButton add the search button
- * @param bool $includeResetLink add the reset button
- * @return string
- */
-	public function close($includeButton = true, $includeResetLink = true) {
-		$ret = '<div class="submit-group">';
-		if ($includeButton) {
-			$ret .= $this->button();
-		}
-		if ($includeResetLink) {
-			$ret .= ' ' . $this->resetLink();
-		}
-		$ret .= '</div></div>';
-		$ret .= $this->Form->end();
-		$ret .= '</div>';
-		return $ret;
-	}
+    /**
+     * Closes the HTML container
+     *
+     * @return string
+     */
+    public function closeContainer()
+    {
+        $ret = $this->templater()->format('contentEnd', []);
+        $ret .= $this->templater()->format('containerEnd', []);
+        return $ret;
+    }
 
-/**
- * Outputs the search button
- *
- * @param string $title button caption
- * @return string
- */
-	public function button($title = null) {
-		if (!$title) {
-			$title = __d('list_filter', 'list_filter.search');
-		}
-		return $this->Form->button( __d('list_filter', ''. $title . ''), array('div' => false, 'class' => 'btn btn-xs btn-primary'));
-	}
+    /**
+     * Opens the listfilter form
+     *
+     * @return string
+     */
+    public function openForm()
+    {
+        $options = Hash::merge(['url' => $this->here], $this->config('formOptions'));
+        $ret = $this->Form->create('Filter', $options);
+        return $ret;
+    }
 
-/**
- * Outputs the filter reset link
- *
- * @param string $title caption for the reset button
- * @return string
- */
-	public function resetLink($title = null) {
-		if (!$title) {
-			$title = __d('list_filter', 'list_filter.reset');
-		}
-		$params = $this->_View->request->query;
-		if (!empty($params)) {
-			foreach ($params as $field => $value) {
-				if (substr($field, 0, 7) == 'Filter-') {
-					unset($params[$field]);
-				}
-			}
-		}
-		$params['controller'] = Inflector::underscore($this->_View->request->controller);
-		$params['action'] = $this->request->action;
-		return $this->Html->link($title, Router::url($params), array('class' => 'btn btn-default btn-xs'));
-	}
+    /**
+     * Closes the listfilter form
+     *
+     * @param bool $includeFilterButton add the search button
+     * @param bool $includeResetButton add the reset button
+     * @return string
+     */
+    public function closeForm($includeFilterButton = true, $includeResetButton = true)
+    {
+        $buttons = '';
+        if ($includeFilterButton) {
+            $buttons .= $this->filterButton();
+        }
+        if ($includeResetButton) {
+            $buttons .= ' ' . $this->resetButton();
+        }
+        $ret = $this->templater()->format('buttons', [
+            'buttons' => $buttons
+        ]);
+        $ret .= $this->Form->end();
+        return $ret;
+    }
 
-/**
- * Adds ListFilter-relevant named params to the given url. Used for detail links
- *
- * @param array $url URL to link to
- * @return array
- */
-	public function addListFilterParams(array $url) {
-		foreach ($this->_View->request->query as $key => $value) {
-			if (substr($key, 0, 7) == 'Filter.' || in_array($key, ['page', 'sort', 'direction'])) {
-				$url[$key] = $value;
-			}
-		}
-		return $url;
-	}
+    /**
+     * Renders the header containing title and toggleButton
+     *
+     * @return void
+     */
+    public function header()
+    {
+        return $this->templater()->format('header', [
+            'title' => $this->config('title'),
+            'toggleButton' => $this->toggleButton()
+        ]);
+    }
 
-/**
- * Renders a back-to-list button using the ListFilter-relevant named params
- *
- * @param string $title button caption
- * @param array $url url to link to
- * @param array $options link() config
- * @return string
- */
-	public function backToListButton($title = null, array $url = null, array $options = []) {
-		if (empty($url)) {
-			$url = [
-				'action' => 'index'
-			];
-		}
-		$options = Hash::merge([
-			'class' => 'btn btn-default btn-xs',
-			'escape' => false,
-			'additionalClasses' => null,
-			'useReferer' => false
-		], $options);
+    /**
+     * Renders the button for toggling the filter box
+     *
+     * @return string HTML
+     */
+    public function toggleButton()
+    {
+        return $this->templater()->format('toggleButton', [
+            'attrs' => $this->templater()->formatAttributes([
+                'class' => $this->config('toggleButtonClasses')
+            ])
+        ]);
+    }
 
-		if(!empty($options['useReferer']) && $this->request->referer() != '/') {
-			$url = $this->request->referer();
-		}
+    /**
+     * Determines if any ListFilter parameters are set
+     *
+     * @return bool
+     */
+    public function filterActive()
+    {
+        $filterActive = (isset($this->_View->viewVars['filterActive'])
+                        && $this->_View->viewVars['filterActive'] === true);
+        return $filterActive;
+    }
 
-		if (!$title) {
-			$title = '<span class="button-text">' . __d('list_filter', 'back_to_list') . '</span>';;
-		}
+    /**
+     * Outputs the search button
+     *
+     * @param string $title button caption
+     * @return string
+     */
+    public function filterButton($title = null, array $options = [])
+    {
+        if (!$title) {
+            $title = __d('list_filter', 'list_filter.search');
+        }
+        $options = Hash::merge($this->config('filterButtonOptions'), $options);
+        return $this->Form->button($title, $options);
+    }
 
-		if ($options['additionalClasses']) {
-			$options['class'] .= ' ' . $options['additionalClasses'];
-		}
+    /**
+     * Outputs the filter reset link
+     *
+     * @param string $title caption for the reset button
+     * @return string
+     */
+    public function resetButton($title = null, array $options = [])
+    {
+        if (!$title) {
+            $title = __d('list_filter', 'list_filter.reset');
+        }
+        $params = $this->_View->request->query;
+        if (!empty($params)) {
+            foreach ($params as $field => $value) {
+                if (substr($field, 0, 7) == 'Filter-') {
+                    unset($params[$field]);
+                }
+            }
+        }
+        $options = Hash::merge($this->config('resetButtonOptions'), $options);
+        $params['controller'] = Inflector::underscore($this->_View->request->controller);
+        $params['action'] = $this->request->action;
+        return $this->Html->link($title, Router::url($params), $options);
+    }
 
-		if(empty($options['useReferer'])) {
-			$url = $this->addListFilterParams($url);
-		}
-		$button = $this->Html->link('<i class="fa fa-arrow-left"></i> ' . $title, $url, $options);
-		return $button;
-	}
+    /**
+     * Adds ListFilter-relevant named params to the given url. Used for detail links
+     *
+     * @param array $url URL to link to
+     * @return array
+     */
+    public function addListFilterParams(array $url)
+    {
+        foreach ($this->_View->request->query as $key => $value) {
+            if (substr($key, 0, 7) == 'Filter.' || in_array($key, ['page', 'sort', 'direction'])) {
+                $url[$key] = $value;
+            }
+        }
+        return $url;
+    }
+
+    /**
+     * Renders a back-to-list button using the ListFilter-relevant named params
+     *
+     * @param string $title button caption
+     * @param array $url url to link to
+     * @param array $options link() config
+     * @return string
+     */
+    public function backToListButton($title = null, array $url = null, array $options = [])
+    {
+        if (empty($url)) {
+            $url = [
+                'action' => 'index'
+            ];
+        }
+        $options = Hash::merge([
+            'class' => 'btn btn-default btn-xs',
+            'escape' => false,
+            'additionalClasses' => null,
+            'useReferer' => false
+        ], $options);
+
+        if (!empty($options['useReferer']) && $this->request->referer() != '/') {
+            $url = $this->request->referer();
+        }
+
+        if (!$title) {
+            $title = '<span class="button-text">' . __('forms.back_to_list') . '</span>';
+        }
+
+        if ($options['additionalClasses']) {
+            $options['class'] .= ' ' . $options['additionalClasses'];
+        }
+
+        if (empty($options['useReferer'])) {
+            $url = $this->addListFilterParams($url);
+        }
+        $button = $this->Html->link('<i class="fa fa-arrow-left"></i> ' . $title, $url, $options);
+        return $button;
+    }
 }

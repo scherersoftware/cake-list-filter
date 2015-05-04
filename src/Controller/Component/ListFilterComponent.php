@@ -5,224 +5,295 @@ use Cake\Controller\Component;
 use Cake\Routing\Router;
 use Cake\Utility\Hash;
 
-class ListFilterComponent extends Component {
-
-	public $components = ['Paginator'];
-
-    public $filterActive = false;
-
-	protected $_controller;
-
-	public $defaultListFilter = array(
-		'type' => 'text',
-		'options' => array(),
-		'showFormField' => true,
-		'empty' => true,
-		'conditionField' => '',
-		'inputOptions' => array(),
-		'searchType' => 'wildcard'
-	);
-
 /**
- * Initializes the instance
+ * Todos
+ * - make class configurable with InstanceConfigTrait
+ * - consolidate naming of searchTypes, better default list filter config
+ * - fix weird escaping of [] for array values in URLs
  *
- * @param array $config Component configuration
- * @return void
+ * @package default
  */
-	public function initialize(array $config) {
-	}
 
-/**
- * Startup callback
- *
- * @param Event $event Controller::startup event
- * @return void
- */
-	public function startup(\Cake\Event\Event $event) {
-		$this->_controller = $event->subject();
-		$controllerListFilters = $this->getFilters();
+class ListFilterComponent extends Component
+{
 
-		if (!empty($controllerListFilters)) {
-			$this->listFilters = $this->getFilters();
+    /**
+     * Controller Instance to work with
+     *
+     * @var Cake\Controller\Controller
+     */
+    protected $_controller;
 
-			// PRG
-			if ($this->_controller->request->is('post') && !empty($this->_controller->request->data['Filter'])) {
-				$urlParams = array();
-				foreach ($this->_controller->request->data['Filter'] as $model => $fields) {
-					foreach ($fields as $field => $value) {
-						if (is_array($value)) {
-							$value = "{$value['year']}-{$value['month']}-{$value['day']}";
-							if ($value == '--') {
-								continue;
-							}
-						}
-						$value = trim($value);
-						if ($value !== 0 && $value !== '0' && empty($value)) {
-							continue;
-						}
-						$urlParams["Filter-{$model}-{$field}"] = $value;
-					}
-				}
-                $passedArgs = $this->_controller->passedArgs;
-                if (!empty($passedArgs)) {
-                    $urlParams = Hash::merge($passedArgs, $urlParams);
+    /**
+     * Default array structure of a list filter.
+     *
+     * @var array
+     */
+    public $defaultListFilter = [
+        'searchType' => 'wildcard',
+        'inputOptions' => [
+            'type' => 'text'
+        ],
+    ];
+
+    /**
+     * Initializes the instance
+     *
+     * @param array $config Component configuration
+     * @return void
+     */
+    public function initialize(array $config)
+    {
+    }
+
+    /**
+     * Startup callback
+     *
+     * @param Event $event Controller::startup event
+     * @return void
+     */
+    public function startup(\Cake\Event\Event $event)
+    {
+        $this->_controller = $event->subject();
+        $controllerListFilters = $this->getFilters();
+
+        if (empty($controllerListFilters)) {
+            return;
+        }
+        if ($this->_controller->request->is('post') && !empty($this->_controller->request->data['Filter'])) {
+            return $this->_controller->redirect($this->getRedirectUrlFromPostData($this->_controller->request->data));
+        }
+        $filterConditions = [];
+        if (!empty($this->_controller->request->query)) {
+            $filterConditions = $this->_prepareFilterConditions($controllerListFilters);
+            $conditions = isset($this->_controller->paginate['conditions']) ? $this->_controller->paginate['conditions'] : [];
+            $this->_controller->paginate = Hash::merge($this->_controller->paginate, [
+                'conditions' => Hash::merge($conditions, $filterConditions)
+            ]);
+        }
+        foreach ($controllerListFilters['fields'] as $field => $options) {
+            if (!empty($controllerListFilters['fields'][$field]['options'])) {
+                $tmpOptions = $controllerListFilters['fields'][$field]['options'];
+            }
+            $controllerListFilters['fields'][$field] = Hash::merge($this->defaultListFilter, $options);
+            if (isset($tmpOptions)) {
+                $controllerListFilters['fields'][$field]['options'] = $tmpOptions;
+            }
+            unset($tmpOptions);
+        }
+        $this->_controller->set('filters', $controllerListFilters['fields']);
+        $this->_controller->set('filterActive', !empty($filterConditions));
+    }
+
+    /**
+     * Uses the query parameters to construct the $filters config array to be passed to the front end
+     * and sets request data so form fields are pre-filled
+     *
+     * @param array $controllerListFilters ListFilter configuration
+     * @return array
+     */
+    protected function _prepareFilterConditions(array $controllerListFilters)
+    {
+        $filterConditions = [];
+        foreach ($this->_controller->request->query as $arg => $value) {
+            if (substr($arg, 0, 7) != 'Filter-') {
+                continue;
+            }
+            unset($betweenDate);
+            list($filter, $model, $field) = explode('-', $arg);
+
+            // if betweenDate
+            if (preg_match("/([a-z_\-\.]+)_(from|to)$/i", $field, $matches)) {
+                $betweenDate = $matches[2];
+                $field = $matches[1];
+            }
+            $conditionField = "{$model}.{$field}";
+            if (!isset($controllerListFilters['fields'][$conditionField])) {
+                continue;
+            }
+
+            $options = $controllerListFilters['fields'][$conditionField];
+
+            if (is_string($value)) {
+                $value = trim($value);
+            }
+
+            if (empty($value) && $value != 0) {
+                continue;
+            }
+            if (isset($options['options'])) {
+                $validOptions = $this->_flattenValueOptions($options['options']);
+            }
+            // for non-multiselects, check if the value is present in the defined valid options
+            if (!empty($options['options']) && $options['searchType'] != 'multipleselect' && !isset($validOptions[$value])) {
+                continue;
+            }
+            // for multiselects, filter out values not defined in value options
+            if ($options['searchType'] == 'multipleselect') {
+                $value = array_intersect($value, array_keys($validOptions));
+            }
+
+            // value to be used for form fields
+            $viewValue = $value;
+
+            if ($options['searchType'] == 'wildcard') {
+                $value = "%{$value}%";
+                $conditionField = $conditionField . ' LIKE';
+            } elseif ($options['searchType'] == 'fulltext') {
+                $filterConditions[] = $this->_getFulltextSearchConditions($conditionField, $value, $options);
+            } elseif ($options['searchType'] == 'betweenDates') {
+                $conditionField = 'DATE(' . $conditionField . ')';
+                if ($betweenDate == 'from') {
+                    $operator = '>=';
+                } elseif ($betweenDate == 'to') {
+                    $operator = '<=';
                 }
-                $params = $this->_controller->request->query;
-				if (!empty($params)) {
-					$urlParams = Hash::merge($params, $urlParams);
-				}
-				return $this->_controller->redirect(Router::url($urlParams));
-			}
-			$this->filterActive = false;
+                if (!empty($options['conditionField'])) {
+                    $conditionField = $options['conditionField'];
+                }
+                $conditionField .= ' ' . $operator;
+                list($year, $month, $day) = explode('-', $value);
+                $viewValue = compact('year', 'month', 'day');
+                $field .= '_' . $betweenDate;
+            } elseif ($options['searchType'] == 'multipleselect') {
+                $conditionField .= ' IN';
+            }
 
-			if (!empty($this->_controller->request->query)) {
-				$filters = array();
-				foreach ($this->_controller->request->query as $arg => $value) {
-					if (substr($arg, 0, 7) == 'Filter-') {
-						unset($betweenDate);
-						list($filter, $model, $field) = explode('-', $arg);
+            // fulltext search adds to $filterConditions itself
+            if ($options['searchType'] != 'fulltext') {
+                $filterConditions[$conditionField] = $value;
+            }
+            $this->_controller->request->data['Filter'][$model][$field] = $viewValue;
+        }
+        return $filterConditions;
+    }
 
-						if (substr($arg, -1) == ']') {
-							if (preg_match('/^(.*)\[\d+\]$/', $arg, $matches)) {
-								$fieldArg = $matches[1];
-								$value = array();
-								foreach ($this->_controller->passedArgs as $a2 => $v2) {
-									if (substr($a2, 0, strlen($fieldArg)) == $fieldArg) {
-										$value[] = $v2;
-									}
-								}
-								list($filter, $model, $field) = explode('.', $fieldArg);
-							}
-						}
-						// if betweenDate
-						if (preg_match("/([a-z_\-\.]+)_(from|to)$/i", $field, $matches)) {
-							$betweenDate = $matches[2];
-							$field = $matches[1];
-						}
-						if (isset($this->listFilters['fields']["{$model}.{$field}"])) {
-							$options = Hash::merge([
-								'searchType' => 'wildcard'
-							], $this->listFilters['fields']["{$model}.{$field}"]);
-							if (is_string($value)) {
-								$value = trim($value);
-							}
+    /**
+     * Splits the search term in value to multiple terms and constructs a OR-style
+     * conditions array for each term, for each field to be searched.
+     *
+     * @param string $conditionField Primary field to search in
+     * @param string $value Search Term
+     * @param array $options Filter configuration
+     * @return array
+     */
+    protected function _getFulltextSearchConditions($conditionField, $value, array $options)
+    {
+        $searchTerms = explode(' ', $value);
+        $searchTerms = array_map('trim', $searchTerms);
 
-							$viewValue = $value;
-							$conditionField = "{$model}.{$field}";
+        $searchFields = [$conditionField];
+        if (!empty($options['searchFields'])) {
+            $searchFields = $options['searchFields'];
+        }
+        $orConditions = [];
+        foreach ($searchTerms as $term) {
+            $searchFieldConditions = [];
+            foreach ($searchFields as $searchField) {
+                $searchFieldConditions["{$searchField} LIKE"] = "%{$term}%";
+            }
+            $orConditions[] = [
+                'OR' => $searchFieldConditions
+            ];
+        }
+        return [
+            'AND' => $orConditions
+        ];
+    }
 
-							if (empty($value) && $value != 0) {
-								continue;
-							}
+    /**
+     * Make sure options arrays are flattened and consolidated before they are used for value
+     * checking. This applies to optgroup-style arrays currently
+     *
+     * @param array $options Options Config
+     * @return array
+     */
+    protected function _flattenValueOptions(array $options)
+    {
+        $flatOptions = $options;
+        if (is_array(current($options))) {
+            $flatOptions = [];
+            foreach ($options as $group => $valueGroup) {
+                $flatOptions = $flatOptions + $valueGroup;
+            }
+        }
+        return $flatOptions;
+    }
 
-							// Support for hierarchical arrays / optgroup selects
-							$flatOptions = [];
-							if (isset($options['options'])) {
-								$flatOptions = $options['options'];
-								if(is_array(current($options['options']))) {
-									$flatOptions = [];
-									foreach($options['options'] as $group => $valueGroup) {
-										$flatOptions = $flatOptions + $valueGroup;
-									}
-								}
-							}
+    /**
+     * Formats and enriches field configs
+     *
+     * @return array
+     */
+    public function getFilters()
+    {
+        if (method_exists($this->_controller, 'getListFilters')) {
+            $filters = $this->_controller->getListFilters($this->_controller->request->action);
+        } elseif (!empty($this->_controller->listFilters[$this->_controller->request->action])) {
+            $filters = $this->_controller->listFilters[$this->_controller->request->action];
+        }
+        if (empty($filters)) {
+            return [];
+        }
+        foreach ($filters['fields'] as $field => &$fieldConfig) {
+            if (isset($fieldConfig['type']) && $fieldConfig['type'] == 'select' && !isset($fieldConfig['searchType'])) {
+                $fieldConfig['searchType'] = 'select';
+                $fieldConfig['inputOptions']['type'] = 'select';
+                unset($fieldConfig['type']);
+            }
+            // backwards compatibility
+            if (isset($fieldConfig['type'])) {
+                $fieldConfig['inputOptions']['type'] = $fieldConfig['type'];
+                unset($fieldConfig['type']);
+            }
+            if (isset($fieldConfig['label'])) {
+                $fieldConfig['inputOptions']['label'] = $fieldConfig['label'];
+                unset($fieldConfig['label']);
+            }
+            if (isset($fieldConfig['searchType']) && in_array($fieldConfig['searchType'], ['select', 'multipleselect'])) {
+                if (!isset($fieldConfig['inputOptions']['type'])) {
+                    $fieldConfig['inputOptions']['type'] = 'select';
+                }
+                if (!isset($fieldConfig['inputOptions']['empty'])) {
+                    $fieldConfig['inputOptions']['empty'] = true;
+                }
+            }
+            $fieldConfig = Hash::merge($this->defaultListFilter, $fieldConfig);
+        }
+        return $filters;
+    }
 
-							if (!empty($options['options']) && $options['searchType'] != 'multipleselect' && !isset($flatOptions[$value])) {
-								continue;
-							}
-
-							$fulltextSearch = false;
-							if ($options['searchType'] == 'wildcard') {
-								//fulltext search
-								if (isset($options['searchFields']) && is_array($options['searchFields'])) {
-									$fulltextSearch = true;
-									$filters = [];
-									foreach ($options['searchFields'] as $searchField) {
-										$filters['OR'][] = ["{$searchField} LIKE" => "%{$value}%"];
-									}
-								} else {
-									$value = "%{$value}%";
-									$value = str_replace('*', '%', $value);
-									$conditionField = $conditionField . ' LIKE';
-								}
-							} elseif ($options['searchType'] == 'betweenDates') {
-								$conditionField = 'DATE(' . $conditionField . ')';
-								if ($betweenDate == 'from') {
-									$operator = '>=';
-									#$this->_controller->data['Filter'][$model][$field . '_to'] = '';
-								} elseif ($betweenDate == 'to') {
-									$operator = '<=';
-									#$this->_controller->data['Filter'][$model][$field . '_from'] = '';
-								}
-								if (!empty($options['conditionField'])) {
-									$conditionField = $options['conditionField'];
-								}
-								$conditionField .= ' ' . $operator;
-
-								// Workaround für FormHelper-Notices (Ticket #218)
-								$otherKey = $betweenDate == 'from' ? '_to' : '_from';
-								if (empty($this->_controller->data['Filter'][$model][$field . $otherKey])) {
-									// $this->_controller->data['Filter'][$model][$field . $otherKey] = array('year' => null, 'month' => null, 'day' => null);
-								}
-
-								list($year, $month, $day) = explode('-', $value);
-								$viewValue = compact('year', 'month', 'day');
-								$field .= '_' . $betweenDate;
-							} elseif ($options['searchType'] == 'afterDate') {
-								$conditionField .= ' >=';
-
-								if (preg_match('/^[\d]{4}-[\d]{2}-[\d]{2}$/', $value)) {
-									list($year, $month, $day) = explode('-', $value);
-									$viewValue = compact('year', 'month', 'day');
-								}
-							}
-							if (!$fulltextSearch) {
-								$filters[$conditionField] = $value;
-							}
-							$this->_controller->request->data['Filter'][$model][$field] = $viewValue;
-						}
-					}
-				}
-
-				$this->filterActive = !empty($filters);
-				$conditions = isset($this->_controller->paginate['conditions']) ? $this->_controller->paginate['conditions'] : [];
-				$this->_controller->paginate = Hash::merge($this->_controller->paginate, [
-					'conditions' => Hash::merge($conditions, $filters)
-				]);
-			}
-			foreach ($this->listFilters['fields'] as $field => $options) {
-				if (!empty($this->listFilters['fields'][$field]['options'])) {
-					$tmpOptions = $this->listFilters['fields'][$field]['options'];
-				}
-				$this->listFilters['fields'][$field] = Hash::merge($this->defaultListFilter, $options);
-				if (isset($tmpOptions)) {
-					$this->listFilters['fields'][$field]['options'] = $tmpOptions;
-				}
-				unset($tmpOptions);
-			}
-			$this->_controller->set('filters', $this->listFilters['fields']);
-			$this->_controller->set('filterActive', $this->filterActive);
-		}
-	}
-
-/**
- * Formats and enriches field configs
- *
- * @return array
- */
-	public function getFilters() {
-		if(method_exists($this->_controller, 'getListFilters')) {
-			$filters = $this->_controller->getListFilters($this->_controller->request->action);
-		} elseif (!empty($this->_controller->listFilters[$this->_controller->request->action])) {
-			$filters = $this->_controller->listFilters[$this->_controller->request->action];
-		}
-		if (empty($filters)) {
-			return [];
-		}
-		foreach ($filters['fields'] as $field => &$fieldConfig) {
-			if (isset($fieldConfig['type']) && $fieldConfig['type'] == 'select' && !isset($fieldConfig['searchType'])) {
-				$fieldConfig['searchType'] = 'select';
-			}
-		}
-		return $filters;
-	}
+    /**
+     * Converts POST filter data in array format to a URL
+     *
+     * @param array $postData Array with Postdata
+     * @return array
+     */
+    public function getRedirectUrlFromPostData(array $postData)
+    {
+        $urlParams = [];
+        foreach ($postData['Filter'] as $model => $fields) {
+            foreach ($fields as $field => $value) {
+                if (is_array($value) && isset($value['year'])) {
+                    $value = "{$value['year']}-{$value['month']}-{$value['day']}";
+                    if ($value == '--') {
+                        continue;
+                    }
+                }
+                if ($value !== 0 && $value !== '0' && empty($value)) {
+                    continue;
+                }
+                $urlParams["Filter-{$model}-{$field}"] = $value;
+            }
+        }
+        $passedArgs = $this->_controller->passedArgs;
+        if (!empty($passedArgs)) {
+            $urlParams = Hash::merge($passedArgs, $urlParams);
+        }
+        $params = $this->_controller->request->query;
+        if (!empty($params)) {
+            $urlParams = Hash::merge($params, $urlParams);
+        }
+        return $urlParams;
+    }
 }

@@ -1,20 +1,20 @@
 {
-	"name": "codekanzlei/cake-list-filter",
-	"description": "List Filter Component / Helper for easy CRUD lists",
-	"license": "MIT",
-	"type": "cakephp-plugin",
-	"extra": {
-    	"installer-name": "ListFilter"
-	},
-	"require": {
-		"cakephp/plugin-installer": "*"
-	},
-	"require-dev": {
-		"cakephp/cakephp": "3.0.x-dev"
-	},
-	"autoload": {
-		"psr-4": {
-		"ListFilter\\": "src"
-		}
-	}
+    "name": "codekanzlei/cake-list-filter",
+    "description": "List Filter Component / Helper for easy CRUD lists",
+    "license": "MIT",
+    "type": "cakephp-plugin",
+    "extra": {
+        "installer-name": "ListFilter"
+    },
+    "require": {
+        "cakephp/plugin-installer": "*"
+    },
+    "require-dev": {
+        "cakephp/cakephp": "3.0.x-dev"
+    },
+    "autoload": {
+        "psr-4": {
+        "ListFilter\\": "src"
+        }
+    }
 }
