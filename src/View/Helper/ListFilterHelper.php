@@ -111,6 +111,7 @@ class ListFilterHelper extends Helper
                 $widgets = array_merge($widgets, $w);
             }
         }
+        // FIXME allow column-layout to be configured with templates.
         $ret = '<div class="row">';
         foreach ($widgets as $i => $widget) {
             $ret .= '<div class="col-md-6">';
