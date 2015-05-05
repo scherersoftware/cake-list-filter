@@ -75,83 +75,45 @@ class ListFilterHelperTest extends TestCase
         #$this->assertHtml($expected, $html);
     }
 
-    /**
-     * Test renderAll method
-     *
-     * @return void
-     */
-    public function testRenderAll()
+    public function testFilterWidgetOptionsMerge()
     {
-        $this->markTestIncomplete('Not implemented yet.');
-    }
+        $viewVars = [
+            'filterActive' => true,
+            'filters' => [
+                'Posts.title' => [
+                    'inputOptions' => [
+                        'label' => false
+                    ],
+                    'searchType' => 'select',
+                    'options' => [
+                        1 => 'opt1',
+                        2 => 'opt2'
+                    ]
+                ],
+            ]
+        ];
+        $this->View->set($viewVars);
 
-    /**
-     * Test filterWidget method
-     *
-     * @return void
-     */
-    public function testFilterWidget()
-    {
-        $this->markTestIncomplete('Not implemented yet.');
-    }
-
-    /**
-     * Test open method
-     *
-     * @return void
-     */
-    public function testOpen()
-    {
-        $this->markTestIncomplete('Not implemented yet.');
-    }
-
-    /**
-     * Test close method
-     *
-     * @return void
-     */
-    public function testClose()
-    {
-        $this->markTestIncomplete('Not implemented yet.');
-    }
-
-    /**
-     * Test button method
-     *
-     * @return void
-     */
-    public function testButton()
-    {
-        $this->markTestIncomplete('Not implemented yet.');
-    }
-
-    /**
-     * Test resetLink method
-     *
-     * @return void
-     */
-    public function testResetLink()
-    {
-        $this->markTestIncomplete('Not implemented yet.');
-    }
-
-    /**
-     * Test addListFilterParams method
-     *
-     * @return void
-     */
-    public function testAddListFilterParams()
-    {
-        $this->markTestIncomplete('Not implemented yet.');
-    }
-
-    /**
-     * Test backToListButton method
-     *
-     * @return void
-     */
-    public function testBackToListButton()
-    {
-        $this->markTestIncomplete('Not implemented yet.');
+        $result = $this->ListFilter->filterWidget('Posts.title', [
+            'options' => [
+                1 => 'opt1',
+                2 => 'opt2'
+            ]
+        ]);
+        $expected = [
+            'div' => [
+                'class' => 'input select'
+            ],
+                'select' => ['name' => 'Filter[Posts][title]', 'id' => 'filter-posts-title'],
+                    ['option' => ['value' => 1]],
+                    'opt1',
+                    '/option',
+                    ['option' => ['value' => 2]],
+                    'opt2',
+                    '/option',
+                '/select',
+            '/div'
+        ];
+        $this->assertHtml($expected, $result);
     }
 }

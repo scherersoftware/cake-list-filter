@@ -141,6 +141,11 @@ class ListFilterHelper extends Helper
             return false;
         }
 
+        // make sure options isn't merged, as it potentially has int keys which will be doubled
+        if (isset($options['options'])) {
+            unset($filters[$field]['options']);
+        }
+
         $options = Hash::merge($filters[$field], $options);
 
         $ret = [];
