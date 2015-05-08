@@ -36,16 +36,6 @@ class ListFilterHelperTest extends TestCase
     }
 
     /**
-     * Test setFilters method
-     *
-     * @return void
-     */
-    public function testSetFilters()
-    {
-        $this->markTestIncomplete('Not implemented yet.');
-    }
-
-    /**
      * Test renderFilterbox method
      *
      * @return void
