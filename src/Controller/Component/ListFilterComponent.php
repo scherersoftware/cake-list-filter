@@ -86,6 +86,16 @@ class ListFilterComponent extends Component
     }
 
     /**
+     * Whether the filter has actually manipulated the pagination conditions
+     *
+     * @return bool
+     */
+    public function filterActive()
+    {
+        return isset($this->_controller->viewVars['filterActive']) ? $this->_controller->viewVars['filterActive'] : false;
+    }
+
+    /**
      * Uses the query parameters to construct the $filters config array to be passed to the front end
      * and sets request data so form fields are pre-filled
      *
