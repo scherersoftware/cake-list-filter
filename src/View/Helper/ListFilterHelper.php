@@ -151,6 +151,11 @@ class ListFilterHelper extends Helper
         $ret = [];
         switch($options['searchType']) {
             case 'betweenDates':
+                $empty = isset($options['inputOptions']['empty']) ? $options['inputOptions']['empty'] : true;
+
+                $fromFieldName = 'Filter.' . $field . '_from';
+                $toFieldName = 'Filter.' . $field . '_to';
+
                 $fromOptions = [
                     'label' => $options['inputOptions']['label'] . ' ' . __d('list_filter', 'from'),
                     'type' => 'date'
@@ -166,9 +171,21 @@ class ListFilterHelper extends Helper
                     $toOptions = Hash::merge($toOptions, $options['inputOptions']['to']);
                 }
 
-                $ret[] = $this->Form->input('Filter.' . $field . '_from', $fromOptions);
-                $ret[] = $this->Form->input('Filter.' . $field . '_to', $toOptions);
+                if ($empty) {
+                    // map the empty option to both option arrays
+                    $fromOptions['empty'] = true;
+                    $toOptions['empty'] = true;
+                    // if the empty option was set, make sure date inputs are not set to the current date by default
+                    if (empty($fromOptions['val']) && empty($this->Form->context()->val($fromFieldName))) {
+                        $fromOptions['val'] = '';
+                    }
+                    if (empty($toOptions['val']) && empty($this->Form->context()->val($toFieldName))) {
+                        $toOptions['val'] = '';
+                    }
+                }
 
+                $ret[] = $this->Form->input($fromFieldName, $fromOptions);
+                $ret[] = $this->Form->input($toFieldName, $toOptions);
                 break;
             case 'multipleselect':
                 $inputOptions = Hash::merge([
