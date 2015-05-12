@@ -156,6 +156,10 @@ class ListFilterHelper extends Helper
                 $fromFieldName = 'Filter.' . $field . '_from';
                 $toFieldName = 'Filter.' . $field . '_to';
 
+                if (empty($options['inputOptions']['label'])) {
+                    $options['inputOptions']['label'] = $field;
+                }
+
                 $fromOptions = [
                     'label' => $options['inputOptions']['label'] . ' ' . __d('list_filter', 'from'),
                     'type' => 'date'
