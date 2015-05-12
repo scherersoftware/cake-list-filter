@@ -302,7 +302,13 @@ class ListFilterComponent extends Component
         }
         $params = $this->_controller->request->query;
         if (!empty($params)) {
-            $urlParams = Hash::merge($params, $urlParams);
+            $cleanParams = [];
+            foreach ($params as $key => $value) {
+                if (substr($key, 0, 7) != 'Filter-') {
+                    $cleanParams[$key] = $value;
+                }
+            }
+            $urlParams = Hash::merge($cleanParams, $urlParams);
         }
         return $urlParams;
     }
