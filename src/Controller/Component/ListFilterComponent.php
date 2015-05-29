@@ -61,7 +61,10 @@ class ListFilterComponent extends Component
             return;
         }
         if ($this->_controller->request->is('post') && !empty($this->_controller->request->data['Filter'])) {
-            return $this->_controller->redirect($this->getRedirectUrlFromPostData($this->_controller->request->data));
+            $redirectUrl = $this->getRedirectUrlFromPostData($this->_controller->request->data);
+            // Remove page param to paginate from the first page
+            unset($redirectUrl['page']);
+            return $this->_controller->redirect($redirectUrl);
         }
         $filterConditions = [];
         if (!empty($this->_controller->request->query)) {
