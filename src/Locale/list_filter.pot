@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
-"POT-Creation-Date: 2015-04-30 10:51+0200\n"
+"POT-Creation-Date: 2015-06-07 20:29+0200\n"
 "PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
 "Last-Translator: NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
@@ -14,31 +14,27 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: /Users/cleptric/Sites/bo_backend//View/Helper/ListFilterHelper.php:107
+#: View/Helper/ListFilterHelper.php:164
 msgid "from"
 msgstr ""
 
-#: /Users/cleptric/Sites/bo_backend//View/Helper/ListFilterHelper.php:112
+#: View/Helper/ListFilterHelper.php:168
 msgid "to"
 msgstr ""
 
-#: /Users/cleptric/Sites/bo_backend//View/Helper/ListFilterHelper.php:163
+#: View/Helper/ListFilterHelper.php:224
 msgid "list_filter.filter_fieldset_title"
 msgstr ""
 
-#: /Users/cleptric/Sites/bo_backend//View/Helper/ListFilterHelper.php:216
+#: View/Helper/ListFilterHelper.php:341
 msgid "list_filter.search"
 msgstr ""
 
-#: /Users/cleptric/Sites/bo_backend//View/Helper/ListFilterHelper.php:218
-msgid ""
-msgstr ""
-
-#: /Users/cleptric/Sites/bo_backend//View/Helper/ListFilterHelper.php:229
+#: View/Helper/ListFilterHelper.php:356
 msgid "list_filter.reset"
 msgstr ""
 
-#: /Users/cleptric/Sites/bo_backend//View/Helper/ListFilterHelper.php:285
-msgid "back_to_list"
+#: View/Helper/ListFilterHelper.php:415
+msgid "forms.back_to_list"
 msgstr ""
 
