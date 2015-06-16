@@ -407,8 +407,8 @@ class ListFilterHelper extends Helper
             'useReferer' => false
         ], $options);
 
-        if (!empty($options['useReferer']) && $this->request->referer() != '/') {
-            $url = $this->request->referer();
+        if (!empty($options['useReferer']) && $this->request->referer(true) != '/' && $this->request->referer(true) != $this->request->here) {
+            $url = $this->request->referer(true);
         }
 
         if (!$title) {
