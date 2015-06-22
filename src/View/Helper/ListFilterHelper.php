@@ -378,7 +378,7 @@ class ListFilterHelper extends Helper
     public function addListFilterParams(array $url)
     {
         foreach ($this->_View->request->query as $key => $value) {
-            if (substr($key, 0, 7) == 'Filter.' || in_array($key, ['page', 'sort', 'direction'])) {
+            if (substr($key, 0, 7) == 'Filter-' || in_array($key, ['page', 'sort', 'direction'])) {
                 $url[$key] = $value;
             }
         }
