@@ -149,7 +149,7 @@ class ListFilterHelper extends Helper
         $options = Hash::merge($filters[$field], $options);
 
         $ret = [];
-        switch($options['searchType']) {
+        switch ($options['searchType']) {
             case 'betweenDates':
                 $empty = isset($options['inputOptions']['empty']) ? $options['inputOptions']['empty'] : true;
 
