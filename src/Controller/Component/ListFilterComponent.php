@@ -194,6 +194,7 @@ class ListFilterComponent extends Component
     {
         $searchTerms = explode(' ', $value);
         $searchTerms = array_map('trim', $searchTerms);
+        $searchTerms = array_map('mb_strtolower', $searchTerms);
 
         if (isset($options['termsCallback']) && is_callable($options['termsCallback'])) {
             $searchTerms = $options['termsCallback']($searchTerms);
