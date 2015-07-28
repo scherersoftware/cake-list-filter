@@ -195,6 +195,10 @@ class ListFilterComponent extends Component
         $searchTerms = explode(' ', $value);
         $searchTerms = array_map('trim', $searchTerms);
 
+        if (isset($options['termsCallback']) && is_callable($options['termsCallback'])) {
+            $searchTerms = $options['termsCallback']($searchTerms);
+        }
+
         $searchFields = [$conditionField];
         if (!empty($options['searchFields'])) {
             $searchFields = $options['searchFields'];

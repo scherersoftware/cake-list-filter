@@ -237,6 +237,63 @@ class ListFilterComponentTest extends TestCase
         $this->assertEquals('term1 term2', $controller->request->data['Filter']['Comments']['comment']);
     }
 
+    /**
+     * Test for manipulating the terms to search for via the termCallback option.
+     *
+     * @return void
+     */
+    public function testFulltextSearchWithTermsCallback()
+    {
+        $request = new Request([
+            'url' => 'controller_posts/index?Filter-Comments-comment=term1+term2',
+            'action' => 'index',
+        ]);
+        $request->action = 'index';
+        $controller = new Controller($request);
+        $controller->listFilters = [
+            'index' => [
+                'fields' => [
+                    'Comments.comment' => [
+                        'searchType' => 'fulltext',
+                        'termsCallback' => function (array $terms) {
+                            $terms[] = 'term3';
+                            return $terms;
+                        }
+                    ],
+                ]
+            ]
+        ];
+        $controller->paginate = [];
+        $ListFilter = new ListFilterComponent($controller->components(), []);
+        $event = new Event('Controller.startup', $controller);
+        $ListFilter->startup($event);
+
+        $this->assertTrue(!empty($controller->paginate['conditions']));
+        $this->assertEquals([
+            [
+                'AND' => [
+                    [
+                        'OR' => [
+                            'Comments.comment LIKE' => '%term1%',
+                        ],
+                    ],
+                    [
+                        'OR' => [
+                            'Comments.comment LIKE' => '%term2%',
+                        ]
+                    ],
+                    [
+                        'OR' => [
+                            'Comments.comment LIKE' => '%term3%',
+                        ]
+                    ]
+                ]
+            ]
+        ], $controller->paginate['conditions']);
+
+        $this->assertEquals('term1 term2', $controller->request->data['Filter']['Comments']['comment']);
+    }
+
     public function testFulltextSearchMultipleFields()
     {
         $request = new Request([

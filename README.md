@@ -97,6 +97,7 @@ This can be one of the following:
 - `multipleselect`: Analog to select, but renders a dropdown with multiple selection.
 - `fulltext`: Will split the given search term by whitespace and makes sure that all the terms are present in the field via LIKE.
     - `searchFields`: If this array is specified, multiple fields will be searched
+    - `termsCallback`: A callback function which receives an array containing the search terms and must return an array. Can be used to influence search logic.
 
 ### inputOptions
 
