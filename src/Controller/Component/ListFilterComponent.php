@@ -332,7 +332,7 @@ class ListFilterComponent extends Component
      *   '{$Tables}.{$field}' => {$defaultValue}
      * ]
      *
-     * @param  array  $filters
+     * @param  array  $filters array of fields and their default values like described above
      * @return bool   false if anything goes wrong, else true
      */
     public function defaultFilters($filters = [])
