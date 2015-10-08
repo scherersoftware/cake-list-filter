@@ -36,6 +36,13 @@ class ListFilterComponent extends Component
         ],
     ];
 
+    public $config = [
+        'FormSession' => [
+            'active' => false,
+            'namespace' => 'ListFilter'
+        ]
+    ];
+
     /**
      * Initializes the instance
      *
@@ -44,6 +51,7 @@ class ListFilterComponent extends Component
      */
     public function initialize(array $config)
     {
+        $this->config = Hash::merge($this->config, $config);
     }
 
     /**
@@ -60,10 +68,25 @@ class ListFilterComponent extends Component
         if (empty($controllerListFilters)) {
             return;
         }
+        
+        // Redirect on Form Session Data
+        if ($this->config['FormSession']['active']) {
+            $formSessionData = $this->_controller->request->session()->read($this->_getSessionKey());
+            if (!empty($formSessionData) && empty($this->_controller->request->query['Filterredirect'])) {
+                $redirectUrl = $this->getRedirectUrlFromPostData(['Filter' => $formSessionData]);
+                $redirectUrl['Filterredirect'] = 1;
+                return $this->_controller->redirect($redirectUrl);
+            }
+        }
+
         if ($this->_controller->request->is('post') && !empty($this->_controller->request->data['Filter'])) {
             $redirectUrl = $this->getRedirectUrlFromPostData($this->_controller->request->data);
             // Remove page param to paginate from the first page
             unset($redirectUrl['page']);
+            // Save ListFilter Form Selection in Session
+            if ($this->config['FormSession']['active']) {
+                $this->_controller->request->session()->write($this->_getSessionKey(), $this->_controller->request->data['Filter']);
+            }
             return $this->_controller->redirect($redirectUrl);
         }
         $filterConditions = [];
@@ -86,6 +109,41 @@ class ListFilterComponent extends Component
         }
         $this->_controller->set('filters', $controllerListFilters['fields']);
         $this->_controller->set('filterActive', !empty($filterConditions));
+    }
+
+    /**
+     * get Session Key for ListFilter Form Handling
+     *
+     * @return array
+     */
+    protected function _getSessionKey()
+    {
+        $sessionKey = [
+            'namespace' => $this->config['FormSession']['namespace'],
+            'plugin' => 'App',
+            'controller' => $this->_controller->request->controller,
+            'action' => $this->_controller->request->action
+        ];
+        if (!empty($this->_controller->request->plugin)) {
+            $sessionKey['plugin'] = $this->_controller->request->plugin;
+        }
+        $sessionKey = implode('.', $sessionKey);
+        return $sessionKey;
+    }
+    
+    /**
+     * checks URL for any Filter Parameter
+     *
+     * @return bool
+     */
+    protected function _filterUrlParameterStatus()
+    {
+        foreach ($this->_controller->request->query as $arg => $value) {
+            if (substr($arg, 0, 7) == 'Filter-') {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
