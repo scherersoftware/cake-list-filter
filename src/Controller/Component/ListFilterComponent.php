@@ -68,17 +68,10 @@ class ListFilterComponent extends Component
         if (empty($controllerListFilters)) {
             return;
         }
-        
         // Redirect on Form Session Data
-        if ($this->config['FormSession']['active']) {
-            $formSessionData = $this->_controller->request->session()->read($this->_getSessionKey());
-            if (!empty($formSessionData) && empty($this->_controller->request->query['Filterredirect'])) {
-                $redirectUrl = $this->getRedirectUrlFromPostData(['Filter' => $formSessionData]);
-                $redirectUrl['Filterredirect'] = 1;
-                return $this->_controller->redirect($redirectUrl);
-            }
-        }
+        $this->_handleFormSessionData();
 
+        // Redirect POST to GET, include FormSession Data
         if ($this->_controller->request->is('post') && !empty($this->_controller->request->data['Filter'])) {
             $redirectUrl = $this->getRedirectUrlFromPostData($this->_controller->request->data);
             // Remove page param to paginate from the first page
@@ -89,6 +82,8 @@ class ListFilterComponent extends Component
             }
             return $this->_controller->redirect($redirectUrl);
         }
+
+        // Do the ListFilter Job
         $filterConditions = [];
         if (!empty($this->_controller->request->query)) {
             $filterConditions = $this->_prepareFilterConditions($controllerListFilters);
@@ -109,6 +104,56 @@ class ListFilterComponent extends Component
         }
         $this->_controller->set('filters', $controllerListFilters['fields']);
         $this->_controller->set('filterActive', !empty($filterConditions));
+    }
+
+    /**
+     * FormSessionData Handling if it is activated
+     *
+     * @return void
+     */
+    protected function _handleFormSessionData()
+    {
+        if ($this->config['FormSession']['active']) {
+            $formSessionData = $this->_controller->request->session()->read($this->_getSessionKey());
+            
+            // Redirect the first time, $formSessionData is present (Filterredirect param not set)
+            if (!empty($formSessionData) && empty($this->_controller->request->query['Filterredirect'])) {
+                if (!empty($formSessionData['Pagination']['page'])) {
+                    $this->_controller->passedArgs['page'] = $formSessionData['Pagination']['page'];
+                }
+                if (!empty($formSessionData['Pagination']['sort'])) {
+                    $this->_controller->passedArgs['sort'] = $formSessionData['Pagination']['sort'];
+                }
+                if (!empty($formSessionData['Pagination']['direction'])) {
+                    $this->_controller->passedArgs['direction'] = $formSessionData['Pagination']['direction'];
+                }
+                unset ($formSessionData['Pagination']);
+                $redirectUrl = $this->getRedirectUrlFromPostData(['Filter' => $formSessionData]);
+                $redirectUrl['Filterredirect'] = 1;
+                // Redirect
+                return $this->_controller->redirect($redirectUrl);
+            }
+            // Reset Session, if no Filter is set
+            if (!$this->_filterUrlParameterStatus()) {
+                unset ($formSessionData);
+                $this->_controller->request->session()->delete($this->_getSessionKey());
+            }
+
+            // Set page, sort and direction if FormSession is active and set, but not redirect
+            if (!empty($formSessionData)) {
+                $formSessionData['Pagination'] = [];
+                if (!empty($this->_controller->request->query['page'])) {
+                    $formSessionData['Pagination']['page'] = $this->_controller->request->query['page'];
+                }
+                if (!empty($this->_controller->request->query['sort'])) {
+                    $formSessionData['Pagination']['sort'] = $this->_controller->request->query['sort'];
+                }
+                if (!empty($this->_controller->request->query['direction'])) {
+                    $formSessionData['Pagination']['direction'] = $this->_controller->request->query['direction'];
+                }
+                $this->_controller->request->session()->write($this->_getSessionKey(), $formSessionData);
+            }
+        }
     }
 
     /**
