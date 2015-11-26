@@ -127,7 +127,7 @@ class ListFilterComponent extends Component
                 if (!empty($formSessionData['Pagination']['direction'])) {
                     $this->_controller->passedArgs['direction'] = $formSessionData['Pagination']['direction'];
                 }
-                unset ($formSessionData['Pagination']);
+                unset($formSessionData['Pagination']);
                 $redirectUrl = $this->getRedirectUrlFromPostData(['Filter' => $formSessionData]);
                 $redirectUrl['Filterredirect'] = 1;
                 // Redirect
@@ -135,7 +135,7 @@ class ListFilterComponent extends Component
             }
             // Reset Session, if no Filter is set
             if (!$this->_filterUrlParameterStatus()) {
-                unset ($formSessionData);
+                unset($formSessionData);
                 $this->_controller->request->session()->delete($this->_getSessionKey());
             }
 
