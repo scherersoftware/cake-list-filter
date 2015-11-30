@@ -425,6 +425,22 @@ class ListFilterComponent extends Component
     }
 
     /**
+     * Adds ListFilter-relevant named params to the given url. Used for detail links
+     *
+     * @param array $url URL to link to
+     * @return array
+     */
+    public function addListFilterParams(array $url)
+    {
+        foreach ($this->request->query as $key => $value) {
+            if (substr($key, 0, 7) == 'Filter-' || in_array($key, ['page', 'sort', 'direction'])) {
+                $url[$key] = $value;
+            }
+        }
+        return $url;
+    }
+
+    /**
      * Set fields given as keys in FilterList and paginator conditions to given values if not set by URL.
      *
      * To reset a default value (normally the empty option), an option with key 'all' must be selected.
