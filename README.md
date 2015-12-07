@@ -103,6 +103,26 @@ This can be one of the following:
 
 These options will be used to render the form field using `FormHelper::input()`. So in here, you can set the label, add classes to the input, etc.
 
+## Handling many-to-many relations
+
+To handle many-to-many relations, like Users BelongsToMany Groups, you have to build a custom query and pass it to the Paginator, as the Paginator by default can't handle many-to-many relations.
+
+    public function index()
+    {
+        $this->paginate['contain'] = ['Users'];
+        $query = $this->Users->query();
+        if (isset($this->paginate['conditions']['Users.group_id'])) {
+            $groupId = $this->paginate['conditions']['Users.group_id'];
+            unset($this->paginate['conditions']['Users.group_id']);
+            $query->matching('Groups', function ($q) use ($groupId) {
+                return $q->where(['Group.id' => $groupId]);
+            });
+        }
+        $users = $this->paginate($query);
+        $this->set(compact('users'));
+    }
+
+
 ## Customization
 
 If you need a custom layout for your filterbox, you can construct the filter box individually like you please. Every element of the listFilter can be rendered individually:
@@ -159,6 +179,5 @@ Also, you can manipulate default templates and classes used by calling ListFilte
             'class' => 'btn btn-default btn-xs'
         ]
     ];
-
 
 
