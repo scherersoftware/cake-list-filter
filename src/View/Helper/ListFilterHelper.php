@@ -364,9 +364,7 @@ class ListFilterHelper extends Helper
             }
         }
         $options = Hash::merge($this->config('resetButtonOptions'), $options);
-        $params['controller'] = Inflector::underscore($this->_View->request->controller);
-        $params['action'] = $this->request->action;
-        return $this->Html->link($title, Router::url($params), $options);
+        return $this->Html->link($title, Router::url($this->request->here), $options);
     }
 
     /**
