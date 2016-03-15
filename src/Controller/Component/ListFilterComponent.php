@@ -134,7 +134,7 @@ class ListFilterComponent extends Component
                 return $this->_controller->redirect($redirectUrl);
             }
             // Reset Session, if no Filter is set
-            if (!$this->_filterUrlParameterStatus()) {
+            if (!$this->filterUrlParameterStatus()) {
                 unset($formSessionData);
                 $this->_controller->request->session()->delete($this->_getSessionKey());
             }
@@ -181,7 +181,7 @@ class ListFilterComponent extends Component
      *
      * @return bool
      */
-    protected function _filterUrlParameterStatus()
+    public function filterUrlParameterStatus()
     {
         foreach ($this->_controller->request->query as $arg => $value) {
             if (substr($arg, 0, 7) == 'Filter-') {
