@@ -1,4 +1,5 @@
-# CakePHP ListFilter Plugin
+CakePHP 3 cake-list-filter
+==========================
 
 This plugin provides an easy way to create filters for CRUD lists. The plugin will dynamically render the markup necessary and manipulate the controller's `$paginate` config dynamically.
 
