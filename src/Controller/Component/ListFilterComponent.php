@@ -17,6 +17,8 @@ use Cake\Utility\Hash;
 class ListFilterComponent extends Component
 {
 
+    public $components = ['Cookie'];
+
     /**
      * Controller Instance to work with
      *
@@ -38,6 +40,10 @@ class ListFilterComponent extends Component
 
     public $config = [
         'FormSession' => [
+            'active' => false,
+            'namespace' => 'ListFilter'
+        ],
+        'FormCookie' => [
             'active' => false,
             'namespace' => 'ListFilter'
         ]
@@ -68,17 +74,20 @@ class ListFilterComponent extends Component
         if (empty($controllerListFilters)) {
             return;
         }
-        // Redirect on Form Session Data
-        $this->_handleFormSessionData();
+        // Redirect on Form Cookie or Form Session Data
+        $this->_handlePersistedFilters();
 
-        // Redirect POST to GET, include FormSession Data
+        // Redirect POST to GET, include FormSession and FormCookie Data
         if ($this->_controller->request->is('post') && !empty($this->_controller->request->data['Filter'])) {
             $redirectUrl = $this->getRedirectUrlFromPostData($this->_controller->request->data);
             // Remove page param to paginate from the first page
             unset($redirectUrl['page']);
             // Save ListFilter Form Selection in Session
             if ($this->config['FormSession']['active']) {
-                $this->_controller->request->session()->write($this->_getSessionKey(), $this->_controller->request->data['Filter']);
+                $this->_controller->request->session()->write($this->_getPersistendStorageKey('FormSession'), $this->_controller->request->data['Filter']);
+            }
+            if ($this->config['FormCookie']['active']) {
+                $this->Cookie->write($this->_getPersistendStorageKey('FormCookie'), $this->_controller->request->data['Filter']);
             }
             return $this->_controller->redirect($redirectUrl);
         }
@@ -107,64 +116,79 @@ class ListFilterComponent extends Component
     }
 
     /**
-     * FormSessionData Handling if it is activated
+     * Handles filters which were persisted through cookies and / or the session.
      *
      * @return void
      */
-    protected function _handleFormSessionData()
+    protected function _handlePersistedFilters()
     {
+        if (isset($this->request->query['resetFilter'])) {
+            $this->_controller->request->session()->delete($this->_getPersistendStorageKey('FormSession'));
+            $this->Cookie->delete($this->_getPersistendStorageKey('FormCookie'));
+            return $this->_controller->redirect($this->request->here);
+        }
+        $persistedFilterData = [];
         if ($this->config['FormSession']['active']) {
-            $formSessionData = $this->_controller->request->session()->read($this->_getSessionKey());
-            
-            // Redirect the first time, $formSessionData is present (Filterredirect param not set)
-            if (!empty($formSessionData) && empty($this->_controller->request->query['Filterredirect'])) {
-                if (!empty($formSessionData['Pagination']['page'])) {
-                    $this->_controller->passedArgs['page'] = $formSessionData['Pagination']['page'];
+            $persistedFilterData = Hash::merge($persistedFilterData, $this->_controller->request->session()->read($this->_getPersistendStorageKey('FormSession')));
+        }
+        if ($this->config['FormCookie']['active']) {
+            $persistedFilterData = Hash::merge($persistedFilterData, $this->Cookie->read($this->_getPersistendStorageKey('FormCookie')));
+        }
+        if (!empty($persistedFilterData)) {
+            // Redirect the first time, $persistedFilterData is present (Filterredirect param not set)
+            if (empty($this->_controller->request->query['Filterredirect'])) {
+                if (!empty($persistedFilterData['Pagination']['page'])) {
+                    $this->_controller->passedArgs['page'] = $persistedFilterData['Pagination']['page'];
                 }
-                if (!empty($formSessionData['Pagination']['sort'])) {
-                    $this->_controller->passedArgs['sort'] = $formSessionData['Pagination']['sort'];
+                if (!empty($persistedFilterData['Pagination']['sort'])) {
+                    $this->_controller->passedArgs['sort'] = $persistedFilterData['Pagination']['sort'];
                 }
-                if (!empty($formSessionData['Pagination']['direction'])) {
-                    $this->_controller->passedArgs['direction'] = $formSessionData['Pagination']['direction'];
+                if (!empty($persistedFilterData['Pagination']['direction'])) {
+                    $this->_controller->passedArgs['direction'] = $persistedFilterData['Pagination']['direction'];
                 }
-                unset($formSessionData['Pagination']);
-                $redirectUrl = $this->getRedirectUrlFromPostData(['Filter' => $formSessionData]);
+                unset($persistedFilterData['Pagination']);
+                $redirectUrl = $this->getRedirectUrlFromPostData(['Filter' => $persistedFilterData]);
                 $redirectUrl['Filterredirect'] = 1;
                 // Redirect
                 return $this->_controller->redirect($redirectUrl);
             }
             // Reset Session, if no Filter is set
             if (!$this->_filterUrlParameterStatus()) {
-                unset($formSessionData);
-                $this->_controller->request->session()->delete($this->_getSessionKey());
+                unset($persistedFilterData);
+                $this->_controller->request->session()->delete($this->_getPersistendStorageKey('FormSession'));
+                $this->Cookie->delete($this->_getPersistendStorageKey('FormCookie'));
             }
 
-            // Set page, sort and direction if FormSession is active and set, but not redirect
-            if (!empty($formSessionData)) {
-                $formSessionData['Pagination'] = [];
-                if (!empty($this->_controller->request->query['page'])) {
-                    $formSessionData['Pagination']['page'] = $this->_controller->request->query['page'];
-                }
-                if (!empty($this->_controller->request->query['sort'])) {
-                    $formSessionData['Pagination']['sort'] = $this->_controller->request->query['sort'];
-                }
-                if (!empty($this->_controller->request->query['direction'])) {
-                    $formSessionData['Pagination']['direction'] = $this->_controller->request->query['direction'];
-                }
-                $this->_controller->request->session()->write($this->_getSessionKey(), $formSessionData);
+            $persistedFilterData['Pagination'] = [];
+            if (!empty($this->_controller->request->query['page'])) {
+                $persistedFilterData['Pagination']['page'] = $this->_controller->request->query['page'];
             }
+            if (!empty($this->_controller->request->query['sort'])) {
+                $persistedFilterData['Pagination']['sort'] = $this->_controller->request->query['sort'];
+            }
+            if (!empty($this->_controller->request->query['direction'])) {
+                $persistedFilterData['Pagination']['direction'] = $this->_controller->request->query['direction'];
+            }
+            $this->_controller->request->session()->write($this->_getPersistendStorageKey('FormSession'), $persistedFilterData);
+            $this->Cookie->write($this->_getPersistendStorageKey('FormCookie'), $persistedFilterData);
         }
     }
 
     /**
-     * get Session Key for ListFilter Form Handling
+     * Get persistent storage key for ListFilter form handling
      *
+     * @param  string  $key  The storage key defined in config
      * @return array
      */
-    protected function _getSessionKey()
+    protected function _getPersistendStorageKey($key)
     {
+        if (!isset($this->config[$key]['namespace'])) {
+            $namespace = 'ListFilter';
+        } else {
+            $namespace = $this->config[$key]['namespace'];
+        }
         $sessionKey = [
-            'namespace' => $this->config['FormSession']['namespace'],
+            'namespace' => $namespace,
             'plugin' => 'App',
             'controller' => $this->_controller->request->controller,
             'action' => $this->_controller->request->action
@@ -175,7 +199,7 @@ class ListFilterComponent extends Component
         $sessionKey = implode('.', $sessionKey);
         return $sessionKey;
     }
-    
+
     /**
      * checks URL for any Filter Parameter
      *

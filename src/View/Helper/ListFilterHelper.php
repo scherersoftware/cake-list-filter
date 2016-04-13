@@ -51,7 +51,10 @@ class ListFilterHelper extends Helper
             'class' => 'btn btn-xs btn-primary'
         ],
         'resetButtonOptions' => [
-            'class' => 'btn btn-default btn-xs'
+            'class' => 'btn btn-default btn-xs',
+            'pass' => [
+                'resetFilters' => true
+            ]
         ]
     ];
 
@@ -364,7 +367,10 @@ class ListFilterHelper extends Helper
             }
         }
         $options = Hash::merge($this->config('resetButtonOptions'), $options);
-        return $this->Html->link($title, Router::url($this->request->here), $options);
+        $url = Hash::merge($this->request->params, [
+            'resetFilter' => true
+        ]);
+        return $this->Html->link($title, Router::url($url), $options);
     }
 
     /**
