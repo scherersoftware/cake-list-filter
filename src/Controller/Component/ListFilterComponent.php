@@ -97,9 +97,20 @@ class ListFilterComponent extends Component
         if (!empty($this->_controller->request->query)) {
             $filterConditions = $this->_prepareFilterConditions($controllerListFilters);
             $conditions = isset($this->_controller->paginate['conditions']) ? $this->_controller->paginate['conditions'] : [];
-            $this->_controller->paginate = Hash::merge($this->_controller->paginate, [
-                'conditions' => Hash::merge($conditions, $filterConditions)
-            ]);
+
+            // Handle namespaced ListFilter
+            if (isset($this->_controller->paginate[$this->_controller->name])) {
+                $conditions = [
+                    $this->_controller->name => [
+                        'conditions' => Hash::merge($conditions, $filterConditions)
+                    ]
+                ];
+            } else {
+                $conditions = [
+                    'conditions' => Hash::merge($conditions, $filterConditions)
+                ];
+            }
+            $this->_controller->paginate = Hash::merge($this->_controller->paginate, $conditions);
         }
         foreach ($controllerListFilters['fields'] as $field => $options) {
             if (!empty($controllerListFilters['fields'][$field]['options'])) {
