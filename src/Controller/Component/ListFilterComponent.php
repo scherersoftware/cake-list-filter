@@ -89,6 +89,7 @@ class ListFilterComponent extends Component
             if ($this->config['FormCookie']['active']) {
                 $this->Cookie->write($this->_getPersistendStorageKey('FormCookie'), $this->_controller->request->data['Filter']);
             }
+
             return $this->_controller->redirect($redirectUrl);
         }
 
@@ -129,13 +130,14 @@ class ListFilterComponent extends Component
     /**
      * Handles filters which were persisted through cookies and / or the session.
      *
-     * @return void
+     * @return mixed
      */
     protected function _handlePersistedFilters()
     {
         if (isset($this->request->query['resetFilter'])) {
             $this->_controller->request->session()->delete($this->_getPersistendStorageKey('FormSession'));
             $this->Cookie->delete($this->_getPersistendStorageKey('FormCookie'));
+
             return $this->_controller->redirect($this->request->here);
         }
         $persistedFilterData = [];
@@ -209,6 +211,7 @@ class ListFilterComponent extends Component
             $sessionKey['plugin'] = $this->_controller->request->plugin;
         }
         $sessionKey = implode('.', $sessionKey);
+
         return $sessionKey;
     }
 
@@ -224,6 +227,7 @@ class ListFilterComponent extends Component
                 return true;
             }
         }
+
         return false;
     }
 
@@ -317,6 +321,7 @@ class ListFilterComponent extends Component
             }
             $this->_controller->request->data['Filter'][$model][$field] = $viewValue;
         }
+
         return $filterConditions;
     }
 
@@ -353,6 +358,7 @@ class ListFilterComponent extends Component
                 'OR' => $searchFieldConditions
             ];
         }
+
         return [
             'AND' => $orConditions
         ];
@@ -374,6 +380,7 @@ class ListFilterComponent extends Component
                 $flatOptions = $flatOptions + $valueGroup;
             }
         }
+
         return $flatOptions;
     }
 
@@ -417,6 +424,7 @@ class ListFilterComponent extends Component
             }
             $fieldConfig = Hash::merge($this->defaultListFilter, $fieldConfig);
         }
+
         return $filters;
     }
 
@@ -457,6 +465,7 @@ class ListFilterComponent extends Component
             }
             $urlParams = Hash::merge($cleanParams, $urlParams);
         }
+
         return $urlParams;
     }
 
@@ -473,6 +482,7 @@ class ListFilterComponent extends Component
                 $url[$key] = $value;
             }
         }
+
         return $url;
     }
 
@@ -510,6 +520,7 @@ class ListFilterComponent extends Component
                 unset($this->_controller->paginate['conditions'][$key]);
             }
         }
+
         return true;
     }
 }

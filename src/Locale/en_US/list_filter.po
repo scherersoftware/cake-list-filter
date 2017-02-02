@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "POT-Creation-Date: 2015-06-07 20:31+0100\n"
-"PO-Revision-Date: 2015-06-07 20:31+0100\n"
+"PO-Revision-Date: 2017-02-02 19:07+0100\n"
 "Last-Translator: Felix Kempf <fk@codekanzlei.de>\n"
 "Language-Team: EMAIL@ADDRESS\n"
 "Language: en_US\n"
@@ -13,7 +13,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 1.8.1\n"
+"X-Generator: Poedit 1.8.11\n"
 
 #: View/Helper/ListFilterHelper.php:164
 msgid "from"
@@ -29,11 +29,11 @@ msgstr "Filter this list"
 
 #: View/Helper/ListFilterHelper.php:341
 msgid "list_filter.search"
-msgstr "search"
+msgstr "Search"
 
 #: View/Helper/ListFilterHelper.php:356
 msgid "list_filter.reset"
-msgstr "reset"
+msgstr "Reset"
 
 #: View/Helper/ListFilterHelper.php:415
 msgid "forms.back_to_list"

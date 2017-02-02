@@ -257,6 +257,7 @@ class ListFilterComponentTest extends TestCase
                         'searchType' => 'fulltext',
                         'termsCallback' => function (array $terms) {
                             $terms[] = 'term3';
+
                             return $terms;
                         }
                     ],

@@ -70,6 +70,7 @@ class ListFilterHelper extends Helper
         } elseif (isset($this->_View->viewVars['filters'])) {
             return $this->_View->viewVars['filters'];
         }
+
         return [];
     }
 
@@ -125,6 +126,7 @@ class ListFilterHelper extends Helper
             }
         }
         $ret .= '</div>';
+
         return $ret;
     }
 
@@ -141,6 +143,7 @@ class ListFilterHelper extends Helper
         $filters = $this->getFilters();
         if (empty($options) && !isset($filters[$field])) {
             trigger_error("No config found for field '{{$field}}'", E_USER_WARNING);
+
             return false;
         }
 
@@ -212,6 +215,7 @@ class ListFilterHelper extends Helper
         if ($returnString) {
             return implode("\n", $ret);
         }
+
         return $ret;
     }
 
@@ -243,6 +247,7 @@ class ListFilterHelper extends Helper
                 'class' => $this->config('contentClasses')
             ])
         ]);
+
         return $ret;
     }
 
@@ -255,6 +260,7 @@ class ListFilterHelper extends Helper
     {
         $ret = $this->templater()->format('contentEnd', []);
         $ret .= $this->templater()->format('containerEnd', []);
+
         return $ret;
     }
 
@@ -267,6 +273,7 @@ class ListFilterHelper extends Helper
     {
         $options = Hash::merge(['url' => $this->here], $this->config('formOptions'));
         $ret = $this->Form->create('Filter', $options);
+
         return $ret;
     }
 
@@ -290,13 +297,14 @@ class ListFilterHelper extends Helper
             'buttons' => $buttons
         ]);
         $ret .= $this->Form->end();
+
         return $ret;
     }
 
     /**
      * Renders the header containing title and toggleButton
      *
-     * @return void
+     * @return string HTML
      */
     public function header()
     {
@@ -329,6 +337,7 @@ class ListFilterHelper extends Helper
     {
         $filterActive = (isset($this->_View->viewVars['filterActive'])
                         && $this->_View->viewVars['filterActive'] === true);
+
         return $filterActive;
     }
 
@@ -336,6 +345,7 @@ class ListFilterHelper extends Helper
      * Outputs the search button
      *
      * @param string $title button caption
+     * @param array $options Options
      * @return string
      */
     public function filterButton($title = null, array $options = [])
@@ -344,6 +354,7 @@ class ListFilterHelper extends Helper
             $title = __d('list_filter', 'list_filter.search');
         }
         $options = Hash::merge($this->config('filterButtonOptions'), $options);
+
         return $this->Form->button($title, $options);
     }
 
@@ -351,6 +362,7 @@ class ListFilterHelper extends Helper
      * Outputs the filter reset link
      *
      * @param string $title caption for the reset button
+     * @param array $options Options
      * @return string
      */
     public function resetButton($title = null, array $options = [])
@@ -370,7 +382,8 @@ class ListFilterHelper extends Helper
         $url = Hash::merge($this->request->params, [
             'resetFilter' => true
         ]);
-        return $this->Html->link($title, Router::url($url), $options);
+
+        return $this->Html->link($title, Router::reverse($url), $options);
     }
 
     /**
@@ -386,6 +399,7 @@ class ListFilterHelper extends Helper
                 $url[$key] = $value;
             }
         }
+
         return $url;
     }
 
@@ -427,6 +441,7 @@ class ListFilterHelper extends Helper
             $url = $this->addListFilterParams($url);
         }
         $button = $this->Html->link('<i class="fa fa-arrow-left"></i> ' . $title, $url, $options);
+
         return $button;
     }
 }
