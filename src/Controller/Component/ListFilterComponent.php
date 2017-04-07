@@ -46,6 +46,9 @@ class ListFilterComponent extends Component
         'FormCookie' => [
             'active' => false,
             'namespace' => 'ListFilter'
+        ],
+        'Validation' => [
+            'validateOptions' => true
         ]
     ];
 
@@ -280,13 +283,16 @@ class ListFilterComponent extends Component
             if (isset($options['options'])) {
                 $validOptions = $this->_flattenValueOptions($options['options']);
             }
-            // for non-multiselects, check if the value is present in the defined valid options
-            if (!empty($options['options']) && $options['searchType'] != 'multipleselect' && !isset($validOptions[$value])) {
-                continue;
-            }
-            // for multiselects, filter out values not defined in value options
-            if ($options['searchType'] == 'multipleselect') {
-                $value = array_intersect($value, array_keys($validOptions));
+
+            if ($this->config['Validation']['validateOptions']) {
+                // for non-multiselects, check if the value is present in the defined valid options
+                if (!empty($options['options']) && $options['searchType'] != 'multipleselect' && !isset($validOptions[$value])) {
+                    continue;
+                }
+                // for multiselects, filter out values not defined in value options
+                if ($options['searchType'] == 'multipleselect') {
+                    $value = array_intersect($value, array_keys($validOptions));
+                }
             }
 
             // value to be used for form fields
