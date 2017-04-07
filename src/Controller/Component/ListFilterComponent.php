@@ -87,10 +87,16 @@ class ListFilterComponent extends Component
             unset($redirectUrl['page']);
             // Save ListFilter Form Selection in Session
             if ($this->config['FormSession']['active']) {
-                $this->_controller->request->session()->write($this->_getPersistendStorageKey('FormSession'), $this->_controller->request->data['Filter']);
+                $this->_controller->request->session()->write(
+                    $this->_getPersistendStorageKey('FormSession'),
+                    $this->_controller->request->data['Filter']
+                );
             }
             if ($this->config['FormCookie']['active']) {
-                $this->Cookie->write($this->_getPersistendStorageKey('FormCookie'), $this->_controller->request->data['Filter']);
+                $this->Cookie->write(
+                    $this->_getPersistendStorageKey('FormCookie'),
+                    $this->_controller->request->data['Filter']
+                );
             }
 
             return $this->_controller->redirect($redirectUrl);
@@ -145,10 +151,16 @@ class ListFilterComponent extends Component
         }
         $persistedFilterData = [];
         if ($this->config['FormSession']['active']) {
-            $persistedFilterData = Hash::merge($persistedFilterData, $this->_controller->request->session()->read($this->_getPersistendStorageKey('FormSession')));
+            $persistedFilterData = Hash::merge(
+                $persistedFilterData,
+                $this->_controller->request->session()->read($this->_getPersistendStorageKey('FormSession'))
+            );
         }
         if ($this->config['FormCookie']['active']) {
-            $persistedFilterData = Hash::merge($persistedFilterData, $this->Cookie->read($this->_getPersistendStorageKey('FormCookie')));
+            $persistedFilterData = Hash::merge(
+                $persistedFilterData,
+                $this->Cookie->read($this->_getPersistendStorageKey('FormCookie'))
+            );
         }
         if (!empty($persistedFilterData)) {
             // Redirect the first time, $persistedFilterData is present (Filterredirect param not set)
@@ -186,7 +198,10 @@ class ListFilterComponent extends Component
             if (!empty($this->_controller->request->query['direction'])) {
                 $persistedFilterData['Pagination']['direction'] = $this->_controller->request->query['direction'];
             }
-            $this->_controller->request->session()->write($this->_getPersistendStorageKey('FormSession'), $persistedFilterData);
+            $this->_controller->request->session()->write(
+                $this->_getPersistendStorageKey('FormSession'),
+                $persistedFilterData
+            );
             $this->Cookie->write($this->_getPersistendStorageKey('FormCookie'), $persistedFilterData);
         }
     }
@@ -286,7 +301,10 @@ class ListFilterComponent extends Component
 
             if ($this->config['Validation']['validateOptions']) {
                 // for non-multiselects, check if the value is present in the defined valid options
-                if (!empty($options['options']) && $options['searchType'] != 'multipleselect' && !isset($validOptions[$value])) {
+                if (!empty($options['options'])
+                    && $options['searchType'] != 'multipleselect'
+                    && !isset($validOptions[$value])
+                ) {
                     continue;
                 }
                 // for multiselects, filter out values not defined in value options
@@ -406,7 +424,9 @@ class ListFilterComponent extends Component
             return [];
         }
         foreach ($filters['fields'] as $field => &$fieldConfig) {
-            if (isset($fieldConfig['type']) && $fieldConfig['type'] == 'select' && !isset($fieldConfig['searchType'])) {
+            if (isset($fieldConfig['type']) && $fieldConfig['type'] == 'select'
+                && !isset($fieldConfig['searchType'])
+            ) {
                 $fieldConfig['searchType'] = 'select';
                 $fieldConfig['inputOptions']['type'] = 'select';
                 unset($fieldConfig['type']);
@@ -420,7 +440,9 @@ class ListFilterComponent extends Component
                 $fieldConfig['inputOptions']['label'] = $fieldConfig['label'];
                 unset($fieldConfig['label']);
             }
-            if (isset($fieldConfig['searchType']) && in_array($fieldConfig['searchType'], ['select', 'multipleselect'])) {
+            if (isset($fieldConfig['searchType'])
+                && in_array($fieldConfig['searchType'], ['select', 'multipleselect'])
+            ) {
                 if (!isset($fieldConfig['inputOptions']['type'])) {
                     $fieldConfig['inputOptions']['type'] = 'select';
                 }
