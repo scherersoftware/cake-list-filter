@@ -375,12 +375,26 @@ class ListFilterComponent extends Component
         $orConditions = [];
         foreach ($searchTerms as $term) {
             $searchFieldConditions = [];
-            foreach ($searchFields as $searchField) {
-                $searchFieldConditions["{$searchField} LIKE"] = "%{$term}%";
+
+            if (is_array($term)) {
+                foreach ($term as $item) {
+                    foreach ($searchFields as $searchField) {
+                        $searchFieldConditions["{$searchField} LIKE"] = "%{$item}%";
+                    }
+
+                    $orConditions['OR'][] = [
+                        'OR' => $searchFieldConditions
+                    ];
+                }
+            } else {
+                foreach ($searchFields as $searchField) {
+                    $searchFieldConditions["{$searchField} LIKE"] = "%{$term}%";
+                }
+
+                $orConditions[] = [
+                    'OR' => $searchFieldConditions
+                ];
             }
-            $orConditions[] = [
-                'OR' => $searchFieldConditions
-            ];
         }
 
         return [
