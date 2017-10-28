@@ -118,6 +118,20 @@ This can be one of the following:
 
 These options will be used to render the form field using `FormHelper::input()`. So in here, you can set the label, add classes to the input, etc.
 
+### searchTermsConjunction
+
+Setting up the component, you may give an additional options array to overwrite the default config. Especially interesting is searchTermsConjunction, which is 'AND' by default
+and means, that multiple terms in a fulltext search will be added to the pagination conditions with an AND conjunction between them to narrow down the search results.
+
+If you wish to broaden the results found by connecting the terms with OR, you can setup the component like so:
+```
+public $components = [
+    'ListFilter.ListFilter' => [
+        'searchTermsConjunction' => 'OR'
+    ]
+];
+```
+
 ## Handling many-to-many relations
 
 To handle many-to-many relations, like Users BelongsToMany Groups, you have to build a custom query and pass it to the Paginator, as the Paginator by default can't handle many-to-many relations.
@@ -171,7 +185,7 @@ If you need a custom layout for your filterbox, you can construct the filter box
 <?= $this->ListFilter->closeForm(false, false); ?>
 ```
 
-Also, you can manipulate default templates and classes used by calling ListFilterHelper::config() with your ovverides. These are the options available:
+Also, you can manipulate default templates and classes used by calling ListFilterHelper::config() with your overrides. These are the options available:
 
 ```
 protected $_defaultConfig = [
