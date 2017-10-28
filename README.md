@@ -123,7 +123,7 @@ These options will be used to render the form field using `FormHelper::input()`.
 Setting up the component, you may give an additional options array to overwrite the default config. Especially interesting is searchTermsConjunction, which is 'AND' by default
 and means, that multiple terms in a fulltext search will be added to the pagination conditions with an AND conjunction between them to narrow down the search results.
 
-If you wish to broaden the results found by connecting the terms with OR, you can setup the component like so:
+If you wish to broaden the results by connecting the terms with OR, you can setup the component like so:
 ```
 public $components = [
     'ListFilter.ListFilter' => [
