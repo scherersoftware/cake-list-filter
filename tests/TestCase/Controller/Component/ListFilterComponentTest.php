@@ -218,17 +218,15 @@ class ListFilterComponentTest extends TestCase
 
         $this->assertTrue(!empty($controller->paginate['conditions']));
         $this->assertEquals([
-            [
-                'AND' => [
-                    [
-                        'OR' => [
-                            'Comments.comment LIKE' => '%term1%',
-                        ],
+            'AND' => [
+                [
+                    'OR' => [
+                        'Comments.comment LIKE' => '%term1%',
                     ],
-                    [
-                        'OR' => [
-                            'Comments.comment LIKE' => '%term2%',
-                        ]
+                ],
+                [
+                    'OR' => [
+                        'Comments.comment LIKE' => '%term2%',
                     ]
                 ]
             ]
@@ -271,22 +269,20 @@ class ListFilterComponentTest extends TestCase
 
         $this->assertTrue(!empty($controller->paginate['conditions']));
         $this->assertEquals([
-            [
-                'AND' => [
-                    [
-                        'OR' => [
-                            'Comments.comment LIKE' => '%term1%',
-                        ],
+            'AND' => [
+                [
+                    'OR' => [
+                        'Comments.comment LIKE' => '%term1%',
                     ],
-                    [
-                        'OR' => [
-                            'Comments.comment LIKE' => '%term2%',
-                        ]
-                    ],
-                    [
-                        'OR' => [
-                            'Comments.comment LIKE' => '%term3%',
-                        ]
+                ],
+                [
+                    'OR' => [
+                        'Comments.comment LIKE' => '%term2%',
+                    ]
+                ],
+                [
+                    'OR' => [
+                        'Comments.comment LIKE' => '%term3%',
                     ]
                 ]
             ]
@@ -320,19 +316,61 @@ class ListFilterComponentTest extends TestCase
 
         $this->assertTrue(!empty($controller->paginate['conditions']));
         $this->assertEquals([
-            [
-                'AND' => [
-                    [
-                        'OR' => [
-                            'Comments.comment LIKE' => '%term1%',
-                            'Comments.note LIKE' => '%term1%',
-                        ],
+            'AND' => [
+                [
+                    'OR' => [
+                        'Comments.comment LIKE' => '%term1%',
+                        'Comments.note LIKE' => '%term1%',
                     ],
-                    [
-                        'OR' => [
-                            'Comments.comment LIKE' => '%term2%',
-                            'Comments.note LIKE' => '%term2%',
-                        ]
+                ],
+                [
+                    'OR' => [
+                        'Comments.comment LIKE' => '%term2%',
+                        'Comments.note LIKE' => '%term2%',
+                    ]
+                ]
+            ]
+        ], $controller->paginate['conditions']);
+
+        $this->assertEquals('term1 term2', $controller->request->data['Filter']['Comments']['comment']);
+    }
+
+    public function testFulltextSearchMultipleFieldsWithOrConjunction()
+    {
+        $request = new Request([
+            'url' => 'controller_posts/index?Filter-Comments-comment=term1+term2',
+            'action' => 'index',
+        ]);
+        $request->action = 'index';
+        $controller = new Controller($request);
+        $controller->listFilters = [
+            'index' => [
+                'fields' => [
+                    'Comments.comment' => [
+                        'searchType' => 'fulltext',
+                        'searchFields' => ['Comments.comment', 'Comments.note']
+                    ],
+                ]
+            ]
+        ];
+        $controller->paginate = [];
+        $ListFilter = new ListFilterComponent($controller->components(), ['searchTermsConjunction' => 'OR']);
+        $event = new Event('Controller.startup', $controller);
+        $ListFilter->startup($event);
+
+        $this->assertTrue(!empty($controller->paginate['conditions']));
+        $this->assertEquals([
+            'OR' => [
+                [
+                    'OR' => [
+                        'Comments.comment LIKE' => '%term1%',
+                        'Comments.note LIKE' => '%term1%',
+                    ],
+                ],
+                [
+                    'OR' => [
+                        'Comments.comment LIKE' => '%term2%',
+                        'Comments.note LIKE' => '%term2%',
                     ]
                 ]
             ]

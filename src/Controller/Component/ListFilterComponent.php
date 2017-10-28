@@ -49,7 +49,8 @@ class ListFilterComponent extends Component
         ],
         'Validation' => [
             'validateOptions' => true
-        ]
+        ],
+        'searchTermsConjunction' => 'AND'
     ];
 
     /**
@@ -320,7 +321,7 @@ class ListFilterComponent extends Component
                 $value = "%{$value}%";
                 $conditionField = $conditionField . ' LIKE';
             } elseif ($options['searchType'] == 'fulltext') {
-                $filterConditions[] = $this->_getFulltextSearchConditions($conditionField, $value, $options);
+                $filterConditions = $this->_getFulltextSearchConditions($conditionField, $value, $options);
             } elseif ($options['searchType'] == 'betweenDates') {
                 $conditionField = 'DATE(' . $conditionField . ')';
                 if ($betweenDate == 'from') {
@@ -372,8 +373,9 @@ class ListFilterComponent extends Component
         if (!empty($options['searchFields'])) {
             $searchFields = $options['searchFields'];
         }
-        $orConditions = [];
-        foreach ($searchTerms as $term) {
+        $conditions = [];
+        $conjunction = $this->config['searchTermsConjunction'];
+        foreach ($searchTerms as $key => $term) {
             $searchFieldConditions = [];
 
             if (is_array($term)) {
@@ -382,7 +384,7 @@ class ListFilterComponent extends Component
                         $searchFieldConditions["{$searchField} LIKE"] = "%{$item}%";
                     }
 
-                    $orConditions['OR'][] = [
+                    $conditions[$conjunction][$key]['OR'][] = [
                         'OR' => $searchFieldConditions
                     ];
                 }
@@ -391,15 +393,13 @@ class ListFilterComponent extends Component
                     $searchFieldConditions["{$searchField} LIKE"] = "%{$term}%";
                 }
 
-                $orConditions[] = [
+                $conditions[$conjunction][$key] = [
                     'OR' => $searchFieldConditions
                 ];
             }
         }
 
-        return [
-            'AND' => $orConditions
-        ];
+        return $conditions;
     }
 
     /**
