@@ -7,6 +7,9 @@ use ListFilter\View\Helper\ListFilterHelper;
 
 /**
  * ListFilter\View\Helper\ListFilterHelper Test Case
+ *
+ * @property \Cake\View\View                          View
+ * @property \ListFilter\View\Helper\ListFilterHelper ListFilter
  */
 class ListFilterHelperTest extends TestCase
 {
