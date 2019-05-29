@@ -68,8 +68,8 @@ class ListFilterHelper extends Helper
             return $this->_filters;
         }
 
-        if (!empty($this->_View->viewBuilder()->getVar('filters'))) {
-            return $this->_View->viewBuilder()->getVar('filters');
+        if (!empty($this->_View->get('filters'))) {
+            return $this->_View->get('filters');
         }
 
         return [];
@@ -334,7 +334,7 @@ class ListFilterHelper extends Helper
      */
     public function filterActive(): bool
     {
-        return $this->_View->viewBuilder()->getVar('filterActive') === true;
+        return $this->_View->get('filterActive') === true;
     }
 
     /**
