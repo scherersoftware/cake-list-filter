@@ -1,14 +1,19 @@
 <?php
+declare(strict_types = 1);
 namespace ListFilter\View\Helper;
 
 use Cake\Routing\Router;
 use Cake\Utility\Hash;
-use Cake\Utility\Inflector;
 use Cake\View\Helper;
 use Cake\View\StringTemplateTrait;
 
+/**
+ * @property \Cake\View\Helper\HtmlHelper $Html
+ * @property \Cake\View\Helper\FormHelper $Form
+ */
 class ListFilterHelper extends Helper
 {
+
     use StringTemplateTrait;
 
     /**
@@ -40,7 +45,7 @@ class ListFilterHelper extends Helper
             'header' => '<div class="panel-heading">{{title}}<div class="pull-right">{{toggleButton}}</div></div>',
             'contentStart' => '<div{{attrs}}>',
             'contentEnd' => '</div>',
-            'buttons' => '<div class="submit-group">{{buttons}}</div>'
+            'buttons' => '<div class="submit-group">{{buttons}}</div>',
         ],
         'containerClasses' => 'panel panel-default list-filter',
         'contentClasses' => 'panel-body',
@@ -48,14 +53,14 @@ class ListFilterHelper extends Helper
         'title' => 'Filter',
         'filterButtonOptions' => [
             'div' => false,
-            'class' => 'btn btn-xs btn-primary'
+            'class' => 'btn btn-xs btn-primary',
         ],
         'resetButtonOptions' => [
             'class' => 'btn btn-default btn-xs',
             'pass' => [
-                'resetFilters' => true
-            ]
-        ]
+                'resetFilters' => true,
+            ],
+        ],
     ];
 
     /**
@@ -63,7 +68,7 @@ class ListFilterHelper extends Helper
      *
      * @return array
      */
-    public function getFilters()
+    public function getFilters(): array
     {
         if ($this->_filters) {
             return $this->_filters;
@@ -80,7 +85,7 @@ class ListFilterHelper extends Helper
      * @param array $filters Filters to render. If none given, it uses a viewVar called "filters"
      * @return string
      */
-    public function renderFilterbox($filters = null)
+    public function renderFilterbox(array $filters = null): string
     {
         if ($filters) {
             $this->_filters = $filters;
@@ -94,7 +99,7 @@ class ListFilterHelper extends Helper
 
         $ret = $this->_View->element('ListFilter.wrapper', [
             'filterBox' => $filterBox,
-            'options' => $this->config()
+            'options' => $this->getConfig(),
         ]);
 
         return $ret;
@@ -105,7 +110,7 @@ class ListFilterHelper extends Helper
      *
      * @return string
      */
-    public function renderAll()
+    public function renderAll(): string
     {
         $widgets = [];
 
@@ -138,7 +143,7 @@ class ListFilterHelper extends Helper
      * @param bool $returnString If false, an array of the generated widget markup is being returned
      * @return string|array Markup string or array of the markup of one or multiple filter input widgets
      */
-    public function filterWidget($field, $options = [], $returnString = true)
+    public function filterWidget(string $field, array $options = [], bool $returnString = true)
     {
         $filters = $this->getFilters();
         if (empty($options) && !isset($filters[$field])) {
@@ -168,11 +173,11 @@ class ListFilterHelper extends Helper
 
                 $fromOptions = [
                     'label' => $options['inputOptions']['label'] . ' ' . __d('list_filter', 'from'),
-                    'type' => 'date'
+                    'type' => 'date',
                 ];
                 $toOptions = [
                     'label' => $options['inputOptions']['label'] . ' ' . __d('list_filter', 'to'),
-                    'type' => 'date'
+                    'type' => 'date',
                 ];
                 if (!empty($options['inputOptions']['from'])) {
                     $fromOptions = Hash::merge($fromOptions, $options['inputOptions']['from']);
@@ -194,8 +199,8 @@ class ListFilterHelper extends Helper
                     }
                 }
 
-                $ret[] = $this->Form->input($fromFieldName, $fromOptions);
-                $ret[] = $this->Form->input($toFieldName, $toOptions);
+                $ret[] = $this->Form->control($fromFieldName, $fromOptions);
+                $ret[] = $this->Form->control($toFieldName, $toOptions);
                 break;
             case 'multipleselect':
                 $inputOptions = Hash::merge([
@@ -203,13 +208,13 @@ class ListFilterHelper extends Helper
                     'options' => $options['options'],
                     'multiple' => true,
                 ], $options['inputOptions']);
-                $ret[] = $this->Form->input('Filter.' . $field, $inputOptions);
+                $ret[] = $this->Form->control('Filter.' . $field, $inputOptions);
                 break;
             default:
                 $inputOptions = Hash::merge([
                     'options' => isset($options['options']) ? $options['options'] : false,
                 ], $options['inputOptions']);
-                $ret[] = $this->Form->input('Filter.' . $field, $inputOptions);
+                $ret[] = $this->Form->control('Filter.' . $field, $inputOptions);
                 break;
         }
         if ($returnString) {
@@ -222,13 +227,11 @@ class ListFilterHelper extends Helper
     /**
      * Opens the HTML container
      *
-     * @return HTML
+     * @return \ListFilter\View\Helper\HTML
      */
-    public function openContainer()
+    public function openContainer(): HTML
     {
-        $classes = $this->config('containerClasses');
-
-        $title = __d('list_filter', 'list_filter.filter_fieldset_title');
+        $classes = $this->getConfig('containerClasses');
 
         if ($this->filterActive()) {
             $classes .= ' opened';
@@ -238,14 +241,14 @@ class ListFilterHelper extends Helper
 
         $ret = $this->templater()->format('containerStart', [
             'attrs' => $this->templater()->formatAttributes([
-                'class' => $classes
-            ])
+                'class' => $classes,
+            ]),
         ]);
         $ret .= $this->header();
         $ret .= $this->templater()->format('contentStart', [
             'attrs' => $this->templater()->formatAttributes([
-                'class' => $this->config('contentClasses')
-            ])
+                'class' => $this->getConfig('contentClasses'),
+            ]),
         ]);
 
         return $ret;
@@ -256,7 +259,7 @@ class ListFilterHelper extends Helper
      *
      * @return string
      */
-    public function closeContainer()
+    public function closeContainer(): string
     {
         $ret = $this->templater()->format('contentEnd', []);
         $ret .= $this->templater()->format('containerEnd', []);
@@ -269,9 +272,9 @@ class ListFilterHelper extends Helper
      *
      * @return string
      */
-    public function openForm()
+    public function openForm(): string
     {
-        $options = Hash::merge(['url' => $this->here], $this->config('formOptions'));
+        $options = Hash::merge(['url' => $this->here], $this->getConfig('formOptions'));
         $ret = $this->Form->create('Filter', $options);
 
         return $ret;
@@ -284,7 +287,7 @@ class ListFilterHelper extends Helper
      * @param bool $includeResetButton add the reset button
      * @return string
      */
-    public function closeForm($includeFilterButton = true, $includeResetButton = true)
+    public function closeForm(bool $includeFilterButton = true, bool $includeResetButton = true): string
     {
         $buttons = '';
         if ($includeFilterButton) {
@@ -294,7 +297,7 @@ class ListFilterHelper extends Helper
             $buttons .= ' ' . $this->resetButton();
         }
         $ret = $this->templater()->format('buttons', [
-            'buttons' => $buttons
+            'buttons' => $buttons,
         ]);
         $ret .= $this->Form->end();
 
@@ -306,11 +309,11 @@ class ListFilterHelper extends Helper
      *
      * @return string HTML
      */
-    public function header()
+    public function header(): string
     {
         return $this->templater()->format('header', [
-            'title' => $this->config('title'),
-            'toggleButton' => $this->toggleButton()
+            'title' => $this->getConfig('title'),
+            'toggleButton' => $this->toggleButton(),
         ]);
     }
 
@@ -319,12 +322,12 @@ class ListFilterHelper extends Helper
      *
      * @return string HTML
      */
-    public function toggleButton()
+    public function toggleButton(): string
     {
         return $this->templater()->format('toggleButton', [
             'attrs' => $this->templater()->formatAttributes([
-                'class' => $this->config('toggleButtonClasses')
-            ])
+                'class' => $this->getConfig('toggleButtonClasses'),
+            ]),
         ]);
     }
 
@@ -333,7 +336,7 @@ class ListFilterHelper extends Helper
      *
      * @return bool
      */
-    public function filterActive()
+    public function filterActive(): bool
     {
         $filterActive = (isset($this->_View->viewVars['filterActive'])
                         && $this->_View->viewVars['filterActive'] === true);
@@ -348,12 +351,12 @@ class ListFilterHelper extends Helper
      * @param array $options Options
      * @return string
      */
-    public function filterButton($title = null, array $options = [])
+    public function filterButton(string $title = null, array $options = []): string
     {
         if (!$title) {
             $title = __d('list_filter', 'list_filter.search');
         }
-        $options = Hash::merge($this->config('filterButtonOptions'), $options);
+        $options = Hash::merge($this->getConfig('filterButtonOptions'), $options);
 
         return $this->Form->button($title, $options);
     }
@@ -365,12 +368,12 @@ class ListFilterHelper extends Helper
      * @param array $options Options
      * @return string
      */
-    public function resetButton($title = null, array $options = [])
+    public function resetButton(string $title = null, array $options = []): string
     {
         if (!$title) {
             $title = __d('list_filter', 'list_filter.reset');
         }
-        $params = $this->_View->request->query;
+        $params = $this->_View->request->getQueryParams();
         if (!empty($params)) {
             foreach ($params as $field => $value) {
                 if (substr($field, 0, 7) == 'Filter-') {
@@ -378,9 +381,9 @@ class ListFilterHelper extends Helper
                 }
             }
         }
-        $options = Hash::merge($this->config('resetButtonOptions'), $options);
+        $options = Hash::merge($this->getConfig('resetButtonOptions'), $options);
         $url = Hash::merge($this->request->params, [
-            'resetFilter' => true
+            'resetFilter' => true,
         ]);
 
         return $this->Html->link($title, Router::reverse($url), $options);
@@ -392,9 +395,9 @@ class ListFilterHelper extends Helper
      * @param array $url URL to link to
      * @return array
      */
-    public function addListFilterParams(array $url)
+    public function addListFilterParams(array $url): array
     {
-        foreach ($this->_View->request->query as $key => $value) {
+        foreach ($this->_View->request->getQueryParams() as $key => $value) {
             if (substr($key, 0, 7) == 'Filter-' || in_array($key, ['page', 'sort', 'direction'])) {
                 $url[$key] = $value;
             }
@@ -411,18 +414,18 @@ class ListFilterHelper extends Helper
      * @param array $options link() config
      * @return string
      */
-    public function backToListButton($title = null, array $url = null, array $options = [])
+    public function backToListButton(string $title = null, array $url = null, array $options = []): string
     {
         if (empty($url)) {
             $url = [
-                'action' => 'index'
+                'action' => 'index',
             ];
         }
         $options = Hash::merge([
             'class' => 'btn btn-default btn-xs',
             'escape' => false,
             'additionalClasses' => null,
-            'useReferer' => false
+            'useReferer' => false,
         ], $options);
 
         if (!empty($options['useReferer']) && $this->request->referer(true) != '/' && $this->request->referer(true) != $this->request->here) {

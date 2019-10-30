@@ -1,8 +1,10 @@
 <?php
+declare(strict_types = 1);
 namespace ListFilter\Controller\Component;
 
 use Cake\Controller\Component;
-use Cake\Routing\Router;
+use Cake\Event\Event;
+use Cake\Http\Cookie\Cookie;
 use Cake\Utility\Hash;
 
 /**
@@ -13,18 +15,8 @@ use Cake\Utility\Hash;
  *
  * @package default
  */
-
 class ListFilterComponent extends Component
 {
-
-    public $components = ['Cookie'];
-
-    /**
-     * Controller Instance to work with
-     *
-     * @var Cake\Controller\Controller
-     */
-    protected $_controller;
 
     /**
      * Default array structure of a list filter.
@@ -34,94 +26,94 @@ class ListFilterComponent extends Component
     public $defaultListFilter = [
         'searchType' => 'wildcard',
         'inputOptions' => [
-            'type' => 'text'
+            'type' => 'text',
         ],
-    ];
-
-    public $config = [
-        'FormSession' => [
-            'active' => false,
-            'namespace' => 'ListFilter'
-        ],
-        'FormCookie' => [
-            'active' => false,
-            'namespace' => 'ListFilter'
-        ],
-        'Validation' => [
-            'validateOptions' => true
-        ],
-        'searchTermsConjunction' => 'AND'
     ];
 
     /**
-     * Initializes the instance
+     * Default configuration
      *
-     * @param array $config Component configuration
-     * @return void
+     * @var array
      */
-    public function initialize(array $config)
-    {
-        $this->config = Hash::merge($this->config, $config);
-    }
+    protected $_defaultConfig = [
+        'FormSession' => [
+            'active' => false,
+            'namespace' => 'ListFilter',
+        ],
+        'FormCookie' => [
+            'active' => false,
+            'namespace' => 'ListFilter',
+        ],
+        'Validation' => [
+            'validateOptions' => true,
+        ],
+        'searchTermsConjunction' => 'AND',
+    ];
 
     /**
      * Startup callback
      *
-     * @param Event $event Controller::startup event
-     * @return void
+     * @param \Cake\Event\Event $event Controller::startup event
+     * @return mixed
      */
-    public function startup(\Cake\Event\Event $event)
+    public function startup(Event $event)
     {
-        $this->_controller = $event->subject();
         $controllerListFilters = $this->getFilters();
 
         if (empty($controllerListFilters)) {
             return;
         }
+
         // Redirect on Form Cookie or Form Session Data
         $this->_handlePersistedFilters();
 
         // Redirect POST to GET, include FormSession and FormCookie Data
-        if ($this->_controller->request->is('post') && !empty($this->_controller->request->data['Filter'])) {
-            $redirectUrl = $this->getRedirectUrlFromPostData($this->_controller->request->data);
+        if ($this->getController()->request->is('post') && !empty($this->getController()->request->getData('Filter'))) {
+            $redirectUrl = $this->getRedirectUrlFromPostData($this->getController()->request->getData());
             // Remove page param to paginate from the first page
             unset($redirectUrl['page']);
+
             // Save ListFilter Form Selection in Session
-            if ($this->config['FormSession']['active']) {
-                $this->_controller->request->session()->write(
+            if ($this->getConfig('FormSession.active')) {
+                $this->getController()->request->getSession()->write(
                     $this->_getPersistendStorageKey('FormSession'),
-                    $this->_controller->request->data['Filter']
+                    $this->getController()->request->getData('Filter')
                 );
-            }
-            if ($this->config['FormCookie']['active']) {
-                $this->Cookie->write(
-                    $this->_getPersistendStorageKey('FormCookie'),
-                    $this->_controller->request->data['Filter']
-                );
+
+                $this->getController()->response = $this->getController()->response
+                    ->withCookie(new Cookie(
+                        $this->_getPersistendStorageKey('FormCookie'),
+                        $this->getController()->request->getData('Filter'),
+                        null,
+                        '/',
+                        '',
+                        true,
+                        true
+                    ));
             }
 
-            return $this->_controller->redirect($redirectUrl);
+            return $this->getController()->redirect($redirectUrl);
         }
 
         // Do the ListFilter Job
         $filterConditions = [];
-        if (!empty($this->_controller->request->query)) {
+        if (!empty($this->getController()->request->getQueryParams())) {
             $filterConditions = $this->_prepareFilterConditions($controllerListFilters);
-            $conditions = isset($this->_controller->paginate['conditions']) ? $this->_controller->paginate['conditions'] : [];
+            $conditions = isset($this->getController()->paginate['conditions']) ? $this->getController()->paginate['conditions'] : [];
 
             // Handle namespaced ListFilter
-            if (isset($this->_controller->paginate[$this->_controller->name])) {
+            if (isset($this->getController()->paginate[$this->getController()->getName()])) {
                 $conditions = [
-                    $this->_controller->name => [
-                        'conditions' => Hash::merge($conditions, $filterConditions)
-                    ]
+                    $this->getController()->name => [
+                        'conditions' => Hash::merge($conditions, $filterConditions),
+                    ],
                 ];
             } else {
                 $conditions = [
-                    'conditions' => Hash::merge($conditions, $filterConditions)
+                    'conditions' => Hash::merge($conditions, $filterConditions),
                 ];
             }
-            $this->_controller->paginate = Hash::merge($this->_controller->paginate, $conditions);
+            $this->getController()->paginate = Hash::merge($this->getController()->paginate, $conditions);
         }
         foreach ($controllerListFilters['fields'] as $field => $options) {
             if (!empty($controllerListFilters['fields'][$field]['options'])) {
@@ -133,8 +125,8 @@ class ListFilterComponent extends Component
             }
             unset($tmpOptions);
         }
-        $this->_controller->set('filters', $controllerListFilters['fields']);
-        $this->_controller->set('filterActive', !empty($filterConditions));
+        $this->getController()->set('filters', $controllerListFilters['fields']);
+        $this->getController()->set('filterActive', !empty($filterConditions));
     }
 
     /**
@@ -144,66 +136,82 @@ class ListFilterComponent extends Component
      */
     protected function _handlePersistedFilters()
     {
-        if (isset($this->request->query['resetFilter'])) {
-            $this->_controller->request->session()->delete($this->_getPersistendStorageKey('FormSession'));
-            $this->Cookie->delete($this->_getPersistendStorageKey('FormCookie'));
+        if (!empty($this->getController()->request->getQuery('resetFilter'))) {
+            $this->getController()->request->getSession()->delete($this->_getPersistendStorageKey('FormSession'));
 
-            return $this->_controller->redirect($this->request->here);
+            $this->getController()->request = $this->getController()->request
+                ->withExpiredCookie($this->_getPersistendStorageKey('FormCookie'));
+
+            return $this->getController()->redirect($this->getController()->request->getAttribute('here'));
         }
         $persistedFilterData = [];
-        if ($this->config['FormSession']['active']) {
+        if ($this->getConfig('FormSession.active')) {
             $persistedFilterData = Hash::merge(
                 $persistedFilterData,
-                $this->_controller->request->session()->read($this->_getPersistendStorageKey('FormSession'))
+                $this->getController()->request->getSession()->read($this->_getPersistendStorageKey('FormSession'))
             );
-        }
-        if ($this->config['FormCookie']['active']) {
+
             $persistedFilterData = Hash::merge(
                 $persistedFilterData,
-                $this->Cookie->read($this->_getPersistendStorageKey('FormCookie'))
+                $this->getController()->request->getCookie($this->_getPersistendStorageKey('FormCookie'))
             );
         }
         if (!empty($persistedFilterData)) {
             // Redirect the first time, $persistedFilterData is present (Filterredirect param not set)
-            if (empty($this->_controller->request->query['Filterredirect'])) {
+            if (empty($this->getController()->request->getQuery('Filterredirect'))) {
                 if (!empty($persistedFilterData['Pagination']['page'])) {
-                    $this->_controller->passedArgs['page'] = $persistedFilterData['Pagination']['page'];
+                    $this->getController()->request = $this->getController()->request
+                        ->withParam('page', $persistedFilterData['Pagination']['page']);
                 }
                 if (!empty($persistedFilterData['Pagination']['sort'])) {
-                    $this->_controller->passedArgs['sort'] = $persistedFilterData['Pagination']['sort'];
+                    $this->getController()->request = $this->getController()->request
+                        ->withParam('sort', $persistedFilterData['Pagination']['sort']);
                 }
                 if (!empty($persistedFilterData['Pagination']['direction'])) {
-                    $this->_controller->passedArgs['direction'] = $persistedFilterData['Pagination']['direction'];
+                    $this->getController()->request = $this->getController()->request
+                        ->withParam('direction', $persistedFilterData['Pagination']['direction']);
                 }
                 unset($persistedFilterData['Pagination']);
                 $redirectUrl = $this->getRedirectUrlFromPostData(['Filter' => $persistedFilterData]);
                 $redirectUrl['Filterredirect'] = 1;
+
                 // Redirect
-                return $this->_controller->redirect($redirectUrl);
+                return $this->getController()->redirect($redirectUrl);
             }
             // Reset Session, if no Filter is set
 
             if (!$this->filterUrlParameterStatus()) {
                 unset($persistedFilterData);
-                $this->_controller->request->session()->delete($this->_getPersistendStorageKey('FormSession'));
-                $this->Cookie->delete($this->_getPersistendStorageKey('FormCookie'));
+                $this->getController()->request->getSession()->delete($this->_getPersistendStorageKey('FormSession'));
+                $this->getController()->request = $this->getController()->request
+                    ->withExpiredCookie($this->_getPersistendStorageKey('FormCookie'));
             }
 
             $persistedFilterData['Pagination'] = [];
-            if (!empty($this->_controller->request->query['page'])) {
-                $persistedFilterData['Pagination']['page'] = $this->_controller->request->query['page'];
+            if (!empty($this->getController()->request->getQuery('page'))) {
+                $persistedFilterData['Pagination']['page'] = $this->getController()->request->getQuery('page');
             }
-            if (!empty($this->_controller->request->query['sort'])) {
-                $persistedFilterData['Pagination']['sort'] = $this->_controller->request->query['sort'];
+            if (!empty($this->getController()->request->getQuery('sort'))) {
+                $persistedFilterData['Pagination']['sort'] = $this->getController()->request->getQuery('sort');
             }
-            if (!empty($this->_controller->request->query['direction'])) {
-                $persistedFilterData['Pagination']['direction'] = $this->_controller->request->query['direction'];
+            if (!empty($this->getController()->request->getQuery('direction'))) {
+                $persistedFilterData['Pagination']['direction'] = $this->getController()->request->getQuery('direction');
             }
-            $this->_controller->request->session()->write(
+            $this->getController()->request->getSession()->write(
                 $this->_getPersistendStorageKey('FormSession'),
                 $persistedFilterData
             );
-            $this->Cookie->write($this->_getPersistendStorageKey('FormCookie'), $persistedFilterData);
+
+            $this->getController()->response = $this->getController()->response
+                ->withCookie(new Cookie(
+                    $this->_getPersistendStorageKey('FormCookie'),
+                    $persistedFilterData,
+                    null,
+                    '/',
+                    '',
+                    true,
+                    true
+                ));
         }
     }
 
@@ -213,21 +221,21 @@ class ListFilterComponent extends Component
      * @param  string  $key  The storage key defined in config
      * @return array
      */
-    protected function _getPersistendStorageKey($key)
+    protected function _getPersistendStorageKey(string $key): array
     {
-        if (!isset($this->config[$key]['namespace'])) {
+        if (!empty($this->getConfig($key . '.namespace'))) {
             $namespace = 'ListFilter';
         } else {
-            $namespace = $this->config[$key]['namespace'];
+            $namespace = $this->getConfig($key . '.namespace');
         }
         $sessionKey = [
             'namespace' => $namespace,
             'plugin' => 'App',
-            'controller' => $this->_controller->request->controller,
-            'action' => $this->_controller->request->action
+            'controller' => $this->getController()->request->controller,
+            'action' => $this->getController()->request->action,
         ];
-        if (!empty($this->_controller->request->plugin)) {
-            $sessionKey['plugin'] = $this->_controller->request->plugin;
+        if (!empty($this->getController()->request->plugin)) {
+            $sessionKey['plugin'] = $this->getController()->request->plugin;
         }
         $sessionKey = implode('.', $sessionKey);
 
@@ -239,9 +247,9 @@ class ListFilterComponent extends Component
      *
      * @return bool
      */
-    public function filterUrlParameterStatus()
+    public function filterUrlParameterStatus(): bool
     {
-        foreach ($this->_controller->request->query as $arg => $value) {
+        foreach ($this->getController()->request->getQueryParams() as $arg) {
             if (substr($arg, 0, 7) == 'Filter-') {
                 return true;
             }
@@ -255,9 +263,9 @@ class ListFilterComponent extends Component
      *
      * @return bool
      */
-    public function filterActive()
+    public function filterActive(): bool
     {
-        return isset($this->_controller->viewVars['filterActive']) ? $this->_controller->viewVars['filterActive'] : false;
+        return isset($this->getController()->viewVars['filterActive']) ? $this->getController()->viewVars['filterActive'] : false;
     }
 
     /**
@@ -267,15 +275,15 @@ class ListFilterComponent extends Component
      * @param array $controllerListFilters ListFilter configuration
      * @return array
      */
-    protected function _prepareFilterConditions(array $controllerListFilters)
+    protected function _prepareFilterConditions(array $controllerListFilters): array
     {
         $filterConditions = [];
-        foreach ($this->_controller->request->query as $arg => $value) {
+        foreach ($this->getController()->request->getQueryParams() as $arg => $value) {
             if (substr($arg, 0, 7) != 'Filter-') {
                 continue;
             }
             unset($betweenDate);
-            list($filter, $model, $field) = explode('-', $arg);
+            list($model, $field) = explode('-', $arg);
 
             // if betweenDate
             if (preg_match("/([a-z_\-\.]+)_(from|to)$/i", $field, $matches)) {
@@ -344,7 +352,7 @@ class ListFilterComponent extends Component
             if ($options['searchType'] != 'fulltext') {
                 $filterConditions[$conditionField] = $value;
             }
-            $this->_controller->request->data['Filter'][$model][$field] = $viewValue;
+            $this->getController()->request->getData('Filter')[$model][$field] = $viewValue;
         }
 
         return $filterConditions;
@@ -359,7 +367,7 @@ class ListFilterComponent extends Component
      * @param array $options Filter configuration
      * @return array
      */
-    protected function _getFulltextSearchConditions($conditionField, $value, array $options)
+    protected function _getFulltextSearchConditions(string $conditionField, string $value, array $options): array
     {
         $searchTerms = explode(' ', $value);
         $searchTerms = array_map('trim', $searchTerms);
@@ -385,7 +393,7 @@ class ListFilterComponent extends Component
                     }
 
                     $conditions[$conjunction][$key]['OR'][] = [
-                        'OR' => $searchFieldConditions
+                        'OR' => $searchFieldConditions,
                     ];
                 }
             } else {
@@ -394,7 +402,7 @@ class ListFilterComponent extends Component
                 }
 
                 $conditions[$conjunction][$key] = [
-                    'OR' => $searchFieldConditions
+                    'OR' => $searchFieldConditions,
                 ];
             }
         }
@@ -409,12 +417,12 @@ class ListFilterComponent extends Component
      * @param array $options Options Config
      * @return array
      */
-    protected function _flattenValueOptions(array $options)
+    protected function _flattenValueOptions(array $options): array
     {
         $flatOptions = $options;
         if (is_array(current($options))) {
             $flatOptions = [];
-            foreach ($options as $group => $valueGroup) {
+            foreach ($options as $valueGroup) {
                 $flatOptions = $flatOptions + $valueGroup;
             }
         }
@@ -427,18 +435,18 @@ class ListFilterComponent extends Component
      *
      * @return array
      */
-    public function getFilters()
+    public function getFilters(): array
     {
         $filters = [];
-        if (method_exists($this->_controller, 'getListFilters')) {
-            $filters = $this->_controller->getListFilters($this->_controller->request->action);
-        } elseif (isset($this->_controller->listFilters) && !empty($this->_controller->listFilters[$this->_controller->request->action])) {
-            $filters = $this->_controller->listFilters[$this->_controller->request->action];
+        if (method_exists($this->getController(), 'getListFilters')) {
+            $filters = $this->getController()->getListFilters($this->getController()->request->getParam('action'));
+        } elseif (isset($this->getController()->listFilters) && !empty($this->getController()->listFilters[$this->getController()->request->getParam('action')])) {
+            $filters = $this->getController()->listFilters[$this->getController()->request->getParam('action')];
         }
         if (empty($filters)) {
             return [];
         }
-        foreach ($filters['fields'] as $field => &$fieldConfig) {
+        foreach ($filters['fields'] as &$fieldConfig) {
             if (isset($fieldConfig['type']) && $fieldConfig['type'] == 'select'
                 && !isset($fieldConfig['searchType'])
             ) {
@@ -477,7 +485,7 @@ class ListFilterComponent extends Component
      * @param array $postData Array with Postdata
      * @return array
      */
-    public function getRedirectUrlFromPostData(array $postData)
+    public function getRedirectUrlFromPostData(array $postData): array
     {
         $urlParams = [];
         foreach ($postData['Filter'] as $model => $fields) {
@@ -494,11 +502,11 @@ class ListFilterComponent extends Component
                 $urlParams["Filter-{$model}-{$field}"] = $value;
             }
         }
-        $passedArgs = $this->_controller->passedArgs;
+        $passedArgs = $this->getController()->getParam('pass');
         if (!empty($passedArgs)) {
             $urlParams = Hash::merge($passedArgs, $urlParams);
         }
-        $params = $this->_controller->request->query;
+        $params = $this->getController()->request->getQueryParams();
         if (!empty($params)) {
             $cleanParams = [];
             foreach ($params as $key => $value) {
@@ -518,9 +526,9 @@ class ListFilterComponent extends Component
      * @param array $url URL to link to
      * @return array
      */
-    public function addListFilterParams(array $url)
+    public function addListFilterParams(array $url): array
     {
-        foreach ($this->request->query as $key => $value) {
+        foreach ($this->getController()->request->getQueryParams() as $key => $value) {
             if (substr($key, 0, 7) == 'Filter-' || in_array($key, ['page', 'sort', 'direction'])) {
                 $url[$key] = $value;
             }
@@ -543,7 +551,7 @@ class ListFilterComponent extends Component
      * @param  array  $filters array of fields and their default values like described above
      * @return bool   false if anything goes wrong, else true
      */
-    public function defaultFilters($filters = [])
+    public function defaultFilters(array $filters = []): bool
     {
         if (empty($filters)) {
             return false;
@@ -554,13 +562,13 @@ class ListFilterComponent extends Component
             if (count($explodedFilterName) !== 3) {
                 return false;
             }
-            if (empty($this->_controller->request->query[$filterName])) {
+            if (empty($this->getController()->request->getQuery($filterName))) {
                 // set request POST data so the inputs will be filled
-                $this->_controller->request->data[$explodedFilterName[0]][$explodedFilterName[1]][$explodedFilterName[2]] = $value;
-                $this->_controller->paginate['conditions'][$key] = $value;
-            } elseif ($this->_controller->request->query[$filterName] == 'all') {
-                unset($this->_controller->request->data[$explodedFilterName[0]][$explodedFilterName[1]][$explodedFilterName[2]]);
-                unset($this->_controller->paginate['conditions'][$key]);
+                $this->getController()->request->getData($explodedFilterName)[0][$explodedFilterName[1]][$explodedFilterName[2]] = $value;
+                $this->getController()->paginate['conditions'][$key] = $value;
+            } elseif ($this->getController()->request->getQuery($filterName) == 'all') {
+                unset($this->getController()->request->getData($explodedFilterName)[0][$explodedFilterName[1]][$explodedFilterName[2]]);
+                unset($this->getController()->paginate['conditions'][$key]);
             }
         }
 

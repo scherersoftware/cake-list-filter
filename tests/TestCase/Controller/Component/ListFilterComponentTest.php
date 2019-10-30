@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 namespace ListFilter\Test\TestCase\Controller\Component;
 
 use Cake\Controller\ComponentRegistry;
@@ -7,7 +8,7 @@ use Cake\Core\Configure;
 use Cake\Datasource\ConnectionManager;
 use Cake\Event\Event;
 use Cake\Network\Exception\NotFoundException;
-use Cake\Network\Request;
+use Cake\Http\ServerRequest;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use Cake\Utility\Hash;
@@ -38,20 +39,22 @@ class ListFilterComponentTest extends TestCase
 
     public function testParamsRedirect()
     {
-        $request = new Request([
+        $request = new ServerRequest([
             'url' => 'controller_posts/index',
-            'action' => 'index',
-            '_method' => 'POST'
+            'params' => [
+                'action' => 'index',
+                '_method' => 'POST'
+            ],
+            'post' => [
+                'Filter' => [
+                    'Posts' => [
+                        'title' => 'foo',
+                        'body' => 'bar',
+                        'multi' => [1, 2],
+                    ],
+                ],
+            ],
         ]);
-        $request->env('REQUEST_METHOD', 'POST');
-        $request->action = 'index';
-        $request->data['Filter'] = [
-            'Posts' => [
-                'title' => 'foo',
-                'body' => 'bar',
-                'multi' => [1, 2]
-            ]
-        ];
 
         $controller = new Controller($request);
         $controller->listFilters = [
@@ -80,18 +83,20 @@ class ListFilterComponentTest extends TestCase
         $this->assertEquals(array_keys($controller->listFilters['index']['fields']), array_keys($ListFilter->getFilters()['fields']));
 
         // Check if the request is being redirected properly
-        $redirectUrl = parse_url($controller->response->header()['Location']);
+        $redirectUrl = parse_url($controller->response->getHeaderLine('Location'));
+
         $this->assertEquals(urldecode($redirectUrl['query']), 'Filter-Posts-title=foo&Filter-Posts-body=bar&Filter-Posts-multi[0]=1&Filter-Posts-multi[1]=2');
     }
 
     public function testBasicFiltering()
     {
-        $request = new Request([
+        $request = new ServerRequest([
             'url' => 'controller_posts/index?Filter-Posts-title=foo&Filter-Posts-body=bar',
-            'action' => 'index',
-            '_method' => 'POST'
+            'params' => [
+                'action' => 'index',
+                '_method' => 'POST',
+            ],
         ]);
-        $request->action = 'index';
 
         $controller = new Controller($request);
         $controller->listFilters = [
@@ -124,11 +129,12 @@ class ListFilterComponentTest extends TestCase
 
     public function testSearchTypes()
     {
-        $request = new Request([
+        $request = new ServerRequest([
             'url' => 'controller_posts/index?Filter-Comments-comment=foo&Filter-Comments-author_id=1&Filter-Comments-created_from=2015-01-01&Filter-Comments-created_to=2015-01-31&Filter-Posts-multi[0]=1&Filter-Posts-multi[1]=2&Filter-Comments-post_id_optgroup=3',
-            'action' => 'index',
+            'params' => [
+                'action' => 'index',
+            ],
         ]);
-        $request->action = 'index';
 
         $controller = new Controller($request);
         $controller->listFilters = [
@@ -186,19 +192,21 @@ class ListFilterComponentTest extends TestCase
         ], $controller->paginate['conditions']);
 
         // Make sure the request data was modified so that the form fields can be pre-filled
-        $this->assertEquals('foo', $controller->request->data['Filter']['Comments']['comment']);
-        $this->assertEquals('1', $controller->request->data['Filter']['Comments']['author_id']);
-        $this->assertEquals(['year' => '2015', 'month' => '01', 'day' => '01'], $controller->request->data['Filter']['Comments']['created_from']);
-        $this->assertEquals(['year' => '2015', 'month' => '01', 'day' => '31'], $controller->request->data['Filter']['Comments']['created_to']);
-        $this->assertEquals('3', $controller->request->data['Filter']['Comments']['post_id_optgroup']);
-        $this->assertEquals(['1', '2'], $controller->request->data['Filter']['Posts']['multi']);
+        $this->assertEquals('foo', $controller->request->getData('Filter')['Comments']['comment']);
+        $this->assertEquals('1', $controller->request->getData('Filter')['Comments']['author_id']);
+        $this->assertEquals(['year' => '2015', 'month' => '01', 'day' => '01'], $controller->request->getData('Filter')['Comments']['created_from']);
+        $this->assertEquals(['year' => '2015', 'month' => '01', 'day' => '31'], $controller->request->getData('Filter')['Comments']['created_to']);
+        $this->assertEquals('3', $controller->request->getData('Filter')['Comments']['post_id_optgroup']);
+        $this->assertEquals(['1', '2'], $controller->request->getData('Filter')['Posts']['multi']);
     }
 
     public function testFulltextSearchSingleField()
     {
-        $request = new Request([
+        $request = new ServerRequest([
             'url' => 'controller_posts/index?Filter-Comments-comment=term1+term2',
-            'action' => 'index',
+            'params' => [
+                'action' => 'index',
+            ],
         ]);
         $request->action = 'index';
         $controller = new Controller($request);
@@ -232,7 +240,7 @@ class ListFilterComponentTest extends TestCase
             ]
         ], $controller->paginate['conditions']);
 
-        $this->assertEquals('term1 term2', $controller->request->data['Filter']['Comments']['comment']);
+        $this->assertEquals('term1 term2', $controller->request->getData('Filter')['Comments']['comment']);
     }
 
     /**
@@ -242,11 +250,13 @@ class ListFilterComponentTest extends TestCase
      */
     public function testFulltextSearchWithTermsCallback()
     {
-        $request = new Request([
+        $request = new ServerRequest([
             'url' => 'controller_posts/index?Filter-Comments-comment=term1+term2',
-            'action' => 'index',
+            'params' => [
+                'action' => 'index',
+            ],
         ]);
-        $request->action = 'index';
+
         $controller = new Controller($request);
         $controller->listFilters = [
             'index' => [
@@ -288,16 +298,18 @@ class ListFilterComponentTest extends TestCase
             ]
         ], $controller->paginate['conditions']);
 
-        $this->assertEquals('term1 term2', $controller->request->data['Filter']['Comments']['comment']);
+        $this->assertEquals('term1 term2', $controller->request->getData('Filter')['Comments']['comment']);
     }
 
     public function testFulltextSearchMultipleFields()
     {
-        $request = new Request([
+        $request = new ServerRequest([
             'url' => 'controller_posts/index?Filter-Comments-comment=term1+term2',
-            'action' => 'index',
+            'params' => [
+                'action' => 'index',
+            ],
         ]);
-        $request->action = 'index';
+
         $controller = new Controller($request);
         $controller->listFilters = [
             'index' => [
@@ -332,16 +344,18 @@ class ListFilterComponentTest extends TestCase
             ]
         ], $controller->paginate['conditions']);
 
-        $this->assertEquals('term1 term2', $controller->request->data['Filter']['Comments']['comment']);
+        $this->assertEquals('term1 term2', $controller->request->getData('Filter')['Comments']['comment']);
     }
 
     public function testFulltextSearchMultipleFieldsWithOrConjunction()
     {
-        $request = new Request([
+        $request = new ServerRequest([
             'url' => 'controller_posts/index?Filter-Comments-comment=term1+term2',
-            'action' => 'index',
+            'params' => [
+                'action' => 'index',
+            ],
         ]);
-        $request->action = 'index';
+
         $controller = new Controller($request);
         $controller->listFilters = [
             'index' => [
@@ -376,17 +390,18 @@ class ListFilterComponentTest extends TestCase
             ]
         ], $controller->paginate['conditions']);
 
-        $this->assertEquals('term1 term2', $controller->request->data['Filter']['Comments']['comment']);
+        $this->assertEquals('term1 term2', $controller->request->getData('Filter')['Comments']['comment']);
     }
 
     public function testManipulationHandling()
     {
-        $request = new Request([
+        $request = new ServerRequest([
             'url' => 'controller_posts/index?Filter-Posts-title=foo&Filter-Posts-body=bar&Filter-Posts-author_id=invalid&Filter-Posts-multi[0]=valid1&Filter-Posts-multi[1]=invalid',
-            'action' => 'index',
-            '_method' => 'POST'
+            'params' => [
+                'action' => 'index',
+                '_method' => 'POST',
+            ],
         ]);
-        $request->action = 'index';
 
         $controller = new Controller($request);
         $controller->listFilters = [

@@ -3,19 +3,21 @@
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.txt)
 [![Build Status](https://travis-ci.org/scherersoftware/cake-list-filter.svg?branch=master)](https://travis-ci.org/scherersoftware/cake-list-filter)
 
-A CakePHP 3 plugin which provides an easy way to create filters for CRUD lists. The plugin will dynamically render the markup necessary and manipulate the controller's `$paginate` config dynamically.
+A CakePHP 3.8 plugin which provides an easy way to create filters for CRUD lists. The plugin will dynamically render the markup necessary and manipulate the controller's `$paginate` config dynamically.
 
 ## Installation
 
-    composer require "codekanzlei/cake-list-filter": "dev-master"
+#### 1. Install the plugin via composer
 
-In your App's `config/bootstrap.php` load the plugin:
+    composer require codekanzlei/cake-list-filter
 
-```
-Plugin::load('ListFilter', ['bootstrap' => false, 'routes' => false]);
-```
+#### 2. Load the plugin in your `src/Application.php`
 
-In your AppController, or in the controller where you'd like to use ListFilter, load the `ListFilterComponent` and `ListFilterHelper`.
+    $this->addPlugin('ListFilter');
+
+## Usage & Configuration
+
+#### 1. Configure `AppController.php`
 
 ```
 public $helpers = [
@@ -27,7 +29,16 @@ public $components = [
 ];
 ```
 
-## Usage
+#### 2. Configure `AppView.php`
+
+**initialize():**
+
+    public function initialize()
+    {
+        $this->loadHelper('ListFilter.ListFilter');
+    }
+
+#### 3. Configure your Controllers
 
 You define filterable fields right in the controller where the pagination happens. This ensures that only the fields you configured can be used for searching, also this automates the generation of the form necessary.
 
