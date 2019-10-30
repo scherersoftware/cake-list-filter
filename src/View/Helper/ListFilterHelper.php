@@ -227,9 +227,9 @@ class ListFilterHelper extends Helper
     /**
      * Opens the HTML container
      *
-     * @return \ListFilter\View\Helper\HTML
+     * @return string
      */
-    public function openContainer(): HTML
+    public function openContainer(): string
     {
         $classes = $this->getConfig('containerClasses');
 
@@ -373,7 +373,7 @@ class ListFilterHelper extends Helper
         if (!$title) {
             $title = __d('list_filter', 'list_filter.reset');
         }
-        $params = $this->_View->request->getQueryParams();
+        $params = $this->_View->getRequest()->getQueryParams();
         if (!empty($params)) {
             foreach ($params as $field => $value) {
                 if (substr($field, 0, 7) == 'Filter-') {
@@ -382,7 +382,7 @@ class ListFilterHelper extends Helper
             }
         }
         $options = Hash::merge($this->getConfig('resetButtonOptions'), $options);
-        $url = Hash::merge($this->request->params, [
+        $url = Hash::merge($this->_View->getRequest()->getQueryParams(), [
             'resetFilter' => true,
         ]);
 

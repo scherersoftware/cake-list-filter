@@ -502,7 +502,7 @@ class ListFilterComponent extends Component
                 $urlParams["Filter-{$model}-{$field}"] = $value;
             }
         }
-        $passedArgs = $this->getController()->getParam('pass');
+        $passedArgs = $this->getController()->request->getParam('pass');
         if (!empty($passedArgs)) {
             $urlParams = Hash::merge($passedArgs, $urlParams);
         }
