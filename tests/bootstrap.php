@@ -2,9 +2,6 @@
 
 use Cake\Cache\Cache;
 use Cake\Core\Configure;
-use Cake\Routing\Route\DashedRoute;
-use Cake\Routing\RouteBuilder;
-use Cake\Routing\Router;
 
 $findRoot = function ($root) {
     do {
@@ -34,7 +31,4 @@ Cache::setConfig([
         'serialize' => true,
     ],
 ]);
-
-Router::resetRoutes();
-
 
