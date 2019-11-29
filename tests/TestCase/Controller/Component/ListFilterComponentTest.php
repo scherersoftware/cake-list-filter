@@ -22,7 +22,7 @@ class ListFilterComponentTest extends TestCase
      *
      * @return void
      */
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
     }
@@ -32,7 +32,7 @@ class ListFilterComponentTest extends TestCase
      *
      * @return void
      */
-    public function tearDown()
+    public function tearDown(): void
     {
         parent::tearDown();
     }
@@ -83,7 +83,9 @@ class ListFilterComponentTest extends TestCase
         $this->assertEquals(array_keys($controller->listFilters['index']['fields']), array_keys($ListFilter->getFilters()['fields']));
 
         // Check if the request is being redirected properly
-        $redirectUrl = parse_url($controller->response->getHeaderLine('Location'));
+        $redirectUrl = parse_url($controller->getResponse()->getHeaderLine('Location'));
+
+        $this->assertArrayHasKey('query', $redirectUrl);
 
         $this->assertEquals(urldecode($redirectUrl['query']), 'Filter-Posts-title=foo&Filter-Posts-body=bar&Filter-Posts-multi[0]=1&Filter-Posts-multi[1]=2');
     }
@@ -122,9 +124,9 @@ class ListFilterComponentTest extends TestCase
                 'Posts.body LIKE' => '%bar%',
             ]
         ], $controller->paginate);
-        $this->assertTrue($controller->viewVars['filterActive']);
-        $this->assertTrue(isset($controller->viewVars['filters']['Posts.title']));
-        $this->assertTrue(isset($controller->viewVars['filters']['Posts.body']));
+        $this->assertTrue($controller->viewBuilder()->getVars()['filterActive']);
+        $this->assertTrue(isset($controller->viewBuilder()->getVars()['filters']['Posts.title']));
+        $this->assertTrue(isset($controller->viewBuilder()->getVars()['filters']['Posts.body']));
     }
 
     public function testSearchTypes()
@@ -192,12 +194,12 @@ class ListFilterComponentTest extends TestCase
         ], $controller->paginate['conditions']);
 
         // Make sure the request data was modified so that the form fields can be pre-filled
-        $this->assertEquals('foo', $controller->request->getData('Filter')['Comments']['comment']);
-        $this->assertEquals('1', $controller->request->getData('Filter')['Comments']['author_id']);
-        $this->assertEquals(['year' => '2015', 'month' => '01', 'day' => '01'], $controller->request->getData('Filter')['Comments']['created_from']);
-        $this->assertEquals(['year' => '2015', 'month' => '01', 'day' => '31'], $controller->request->getData('Filter')['Comments']['created_to']);
-        $this->assertEquals('3', $controller->request->getData('Filter')['Comments']['post_id_optgroup']);
-        $this->assertEquals(['1', '2'], $controller->request->getData('Filter')['Posts']['multi']);
+        $this->assertEquals('foo', $controller->getRequest()->getData('Filter')['Comments']['comment']);
+        $this->assertEquals('1', $controller->getRequest()->getData('Filter')['Comments']['author_id']);
+        $this->assertEquals(['year' => '2015', 'month' => '01', 'day' => '01'], $controller->getRequest()->getData('Filter')['Comments']['created_from']);
+        $this->assertEquals(['year' => '2015', 'month' => '01', 'day' => '31'], $controller->getRequest()->getData('Filter')['Comments']['created_to']);
+        $this->assertEquals('3', $controller->getRequest()->getData('Filter')['Comments']['post_id_optgroup']);
+        $this->assertEquals(['1', '2'], $controller->getRequest()->getData('Filter')['Posts']['multi']);
     }
 
     public function testFulltextSearchSingleField()
@@ -240,7 +242,7 @@ class ListFilterComponentTest extends TestCase
             ]
         ], $controller->paginate['conditions']);
 
-        $this->assertEquals('term1 term2', $controller->request->getData('Filter')['Comments']['comment']);
+        $this->assertEquals('term1 term2', $controller->getRequest()->getData('Filter')['Comments']['comment']);
     }
 
     /**
@@ -298,7 +300,7 @@ class ListFilterComponentTest extends TestCase
             ]
         ], $controller->paginate['conditions']);
 
-        $this->assertEquals('term1 term2', $controller->request->getData('Filter')['Comments']['comment']);
+        $this->assertEquals('term1 term2', $controller->getRequest()->getData('Filter')['Comments']['comment']);
     }
 
     public function testFulltextSearchMultipleFields()
@@ -344,7 +346,7 @@ class ListFilterComponentTest extends TestCase
             ]
         ], $controller->paginate['conditions']);
 
-        $this->assertEquals('term1 term2', $controller->request->getData('Filter')['Comments']['comment']);
+        $this->assertEquals('term1 term2', $controller->getRequest()->getData('Filter')['Comments']['comment']);
     }
 
     public function testFulltextSearchMultipleFieldsWithOrConjunction()
@@ -390,7 +392,7 @@ class ListFilterComponentTest extends TestCase
             ]
         ], $controller->paginate['conditions']);
 
-        $this->assertEquals('term1 term2', $controller->request->getData('Filter')['Comments']['comment']);
+        $this->assertEquals('term1 term2', $controller->getRequest()->getData('Filter')['Comments']['comment']);
     }
 
     public function testManipulationHandling()

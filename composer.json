@@ -4,30 +4,36 @@
     "license": "MIT",
     "type": "cakephp-plugin",
     "require": {
-        "php": ">=7.1",
-        "cakephp/cakephp": ">=3.8"
+        "php": ">=7.2",
+        "cakephp/cakephp": "^4.0.0-RC1"
     },
     "require-dev": {
-        "phpunit/phpunit": "^6.0",
-        "phpstan/phpstan": "^0.11",
-        "cakephp/cakephp-codesniffer": "^3.1",
-        "scherersoftware/coding-standard": "^3.1"
+        "phpunit/phpunit": "^8.3.3|^8.4",
+        "scherersoftware/coding-standard": "^4.0-dev",
+        "phpstan/phpstan": "0.11.*"
     },
     "autoload": {
         "psr-4": {
-        "ListFilter\\": "src"
+            "ListFilter\\": "src",
+            "ListFilter\\Test\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ListFilter\\": "src",
+            "ListFilter\\Test\\": "src"
         }
     },
     "scripts": {
         "check": [
             "@php-check",
-            "@php-check-strict",
             "@phpstan",
             "@phpunit"
         ],
-        "php-check": "vendor/bin/phpcs --colors -p --standard=vendor/cakephp/cakephp-codesniffer/CakePHP ./src",
-        "php-check-strict": "vendor/bin/phpcs -p --standard=vendor/scherersoftware/coding-standard/scherersoftware ./src",
-        "phpstan": "php -d memory_limit=-1 vendor/bin/phpstan analyse -c phpstan.neon -l 5 ./src",
+        "php-check": "vendor/bin/phpcs --colors -p --standard=vendor/scherersoftware/coding-standard/scherersoftware ./src",
+        "phpstan": "php -d memory_limit=-1 vendor/bin/phpstan analyse -c phpstan.neon -l 6 ./src",
         "phpunit": "vendor/bin/phpunit --coverage-clover=coverage.xml"
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

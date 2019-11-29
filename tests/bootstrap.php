@@ -1,5 +1,11 @@
 <?php
 
+use Cake\Cache\Cache;
+use Cake\Core\Configure;
+use Cake\Routing\Route\DashedRoute;
+use Cake\Routing\RouteBuilder;
+use Cake\Routing\Router;
+
 $findRoot = function ($root) {
     do {
         $lastRoot = $root;
@@ -13,3 +19,22 @@ $findRoot = function ($root) {
 $root = $findRoot(__FILE__);
 unset($findRoot);
 chdir($root);
+
+Configure::write('App.namespace', 'ListFilter');
+Configure::write('App.encoding', 'utf8');
+Cache::setConfig([
+    '_cake_core_' => [
+        'engine' => 'File',
+        'prefix' => 'cake_core_',
+        'serialize' => true,
+    ],
+    '_cake_model_' => [
+        'engine' => 'File',
+        'prefix' => 'cake_model_',
+        'serialize' => true,
+    ],
+]);
+
+Router::resetRoutes();
+
+

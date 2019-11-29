@@ -4,6 +4,7 @@ namespace ListFilter\View\Helper;
 
 use Cake\Routing\Router;
 use Cake\Utility\Hash;
+use Cake\View\Form\NullContext;
 use Cake\View\Helper;
 use Cake\View\StringTemplateTrait;
 
@@ -72,8 +73,8 @@ class ListFilterHelper extends Helper
     {
         if ($this->_filters) {
             return $this->_filters;
-        } elseif (isset($this->_View->viewVars['filters'])) {
-            return $this->_View->viewVars['filters'];
+        } elseif (!empty($this->getView()->get('filters'))) {
+            return $this->getView()->get('filters');
         }
 
         return [];
@@ -97,12 +98,10 @@ class ListFilterHelper extends Helper
         $filterBox .= $this->closeForm();
         $filterBox .= $this->closeContainer();
 
-        $ret = $this->_View->element('ListFilter.wrapper', [
+        return $this->_View->element('ListFilter.wrapper', [
             'filterBox' => $filterBox,
             'options' => $this->getConfig(),
         ]);
-
-        return $ret;
     }
 
     /**
@@ -116,7 +115,7 @@ class ListFilterHelper extends Helper
 
         foreach ($this->getFilters() as $field => $options) {
             $w = $this->filterWidget($field, $options, false);
-            if ($w) {
+            if (\is_array($w)) {
                 $widgets = array_merge($widgets, $w);
             }
         }
@@ -126,7 +125,7 @@ class ListFilterHelper extends Helper
             $ret .= '<div class="col-md-6">';
             $ret .= $widget;
             $ret .= '</div>';
-            if (($i + 1) % 2 === 0) {
+            if (((int)$i + 1) % 2 === 0) {
                 $ret .= '</div><div class="row">';
             }
         }
@@ -149,7 +148,11 @@ class ListFilterHelper extends Helper
         if (empty($options) && !isset($filters[$field])) {
             trigger_error("No config found for field '{{$field}}'", E_USER_WARNING);
 
-            return false;
+            if ($returnString) {
+                return '';
+            }
+
+            return [];
         }
 
         // make sure options isn't merged, as it potentially has int keys which will be doubled
@@ -274,10 +277,9 @@ class ListFilterHelper extends Helper
      */
     public function openForm(): string
     {
-        $options = Hash::merge(['url' => $this->here], $this->getConfig('formOptions'));
-        $ret = $this->Form->create('Filter', $options);
+        $options = Hash::merge(['url' => $this->getView()->getRequest()->getParam('action')], $this->getConfig('formOptions'));
 
-        return $ret;
+        return $this->Form->create(null, $options);
     }
 
     /**
@@ -338,10 +340,7 @@ class ListFilterHelper extends Helper
      */
     public function filterActive(): bool
     {
-        $filterActive = (isset($this->_View->viewVars['filterActive'])
-                        && $this->_View->viewVars['filterActive'] === true);
-
-        return $filterActive;
+        return $this->getView()->get('filterActive') === true;
     }
 
     /**
@@ -373,20 +372,27 @@ class ListFilterHelper extends Helper
         if (!$title) {
             $title = __d('list_filter', 'list_filter.reset');
         }
-        $params = $this->_View->getRequest()->getQueryParams();
+        $params = $this->getView()->getRequest()->getQueryParams();
         if (!empty($params)) {
             foreach ($params as $field => $value) {
-                if (substr($field, 0, 7) == 'Filter-') {
+                if (strpos((string)$field, 'Filter-') === 0) {
                     unset($params[$field]);
                 }
             }
         }
         $options = Hash::merge($this->getConfig('resetButtonOptions'), $options);
-        $url = Hash::merge($this->_View->getRequest()->getQueryParams(), [
+        $url = Hash::merge($params, [
             'resetFilter' => true,
         ]);
 
-        return $this->Html->link($title, Router::reverse($url), $options);
+        $reversed = Router::reverse($url);
+
+        $redirectUrl = $reversed;
+        if (!Router::routeExists($reversed)) {
+            $redirectUrl = '/';
+        }
+
+        return $this->Html->link($title, $redirectUrl, $options);
     }
 
     /**
@@ -397,8 +403,8 @@ class ListFilterHelper extends Helper
      */
     public function addListFilterParams(array $url): array
     {
-        foreach ($this->_View->request->getQueryParams() as $key => $value) {
-            if (substr($key, 0, 7) == 'Filter-' || in_array($key, ['page', 'sort', 'direction'])) {
+        foreach ($this->getView()->getRequest()->getQueryParams() as $key => $value) {
+            if (strpos($key, 'Filter-') === 0 || in_array($key, ['page', 'sort', 'direction'])) {
                 $url[$key] = $value;
             }
         }
@@ -428,8 +434,12 @@ class ListFilterHelper extends Helper
             'useReferer' => false,
         ], $options);
 
-        if (!empty($options['useReferer']) && $this->request->referer(true) != '/' && $this->request->referer(true) != $this->request->here) {
-            $url = $this->request->referer(true);
+        $request = $this->getView()->getRequest();
+
+        if (!empty($options['useReferer']) && $request->referer(true) !== '/' && $request->referer(true) !== $request->getParam('action')) {
+            $url = $request->referer(true);
+        } elseif (empty($options['useReferer'])) {
+            $url = $this->addListFilterParams($url);
         }
 
         if (!$title) {
@@ -440,11 +450,7 @@ class ListFilterHelper extends Helper
             $options['class'] .= ' ' . $options['additionalClasses'];
         }
 
-        if (empty($options['useReferer'])) {
-            $url = $this->addListFilterParams($url);
-        }
-        $button = $this->Html->link('<i class="fa fa-arrow-left"></i> ' . $title, $url, $options);
 
-        return $button;
+        return $this->Html->link('<i class="fa fa-arrow-left"></i> ' . $title, $url, $options);
     }
 }

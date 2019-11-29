@@ -13,11 +13,21 @@ class ListFilterHelperTest extends TestCase
 {
 
     /**
+     * @var \Cake\View\View
+     */
+    private $View;
+
+    /**
+     * @var \ListFilter\View\Helper\ListFilterHelper
+     */
+    private $ListFilter;
+
+    /**
      * setUp method
      *
      * @return void
      */
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
         $this->View = new View();
@@ -29,7 +39,7 @@ class ListFilterHelperTest extends TestCase
      *
      * @return void
      */
-    public function tearDown()
+    public function tearDown(): void
     {
         unset($this->ListFilter);
         unset($this->View);
