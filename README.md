@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.txt)
 [![Build Status](https://travis-ci.org/scherersoftware/cake-list-filter.svg?branch=master)](https://travis-ci.org/scherersoftware/cake-list-filter)
 
-A CakePHP 3.8 plugin which provides an easy way to create filters for CRUD lists. The plugin will dynamically render the markup necessary and manipulate the controller's `$paginate` config dynamically.
+A CakePHP 4 plugin which provides an easy way to create filters for CRUD lists. The plugin will dynamically render the markup necessary and manipulate the controller's `$paginate` config dynamically.
 
 ## Installation
 
