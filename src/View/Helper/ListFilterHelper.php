@@ -275,7 +275,12 @@ class ListFilterHelper extends Helper
      */
     public function openForm(): string
     {
-        $options = Hash::merge(['url' => $this->getView()->getRequest()->getParam('action')], $this->getConfig('formOptions'));
+        $options = Hash::merge(
+            [
+                'url' => $this->getView()->getRequest()->getParam('action'),
+            ],
+            $this->getConfig('formOptions')
+        );
 
         return $this->Form->create(null, $options);
     }
@@ -434,7 +439,11 @@ class ListFilterHelper extends Helper
 
         $request = $this->getView()->getRequest();
 
-        if (!empty($options['useReferer']) && $request->referer(true) !== '/' && $request->referer(true) !== $request->getParam('action')) {
+        if (
+            !empty($options['useReferer']) &&
+            $request->referer(true) !== '/' &&
+            $request->referer(true) !== $request->getParam('action')
+        ) {
             $url = $request->referer(true);
         } elseif (empty($options['useReferer'])) {
             $url = $this->addListFilterParams($url);

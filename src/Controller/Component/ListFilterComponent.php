@@ -150,7 +150,10 @@ class ListFilterComponent extends Component
         $filters = [];
         if (method_exists($this->getController(), 'getListFilters')) {
             $filters = $this->getController()->getListFilters($this->getController()->getRequest()->getParam('action'));
-        } elseif (isset($this->getController()->listFilters) && !empty($this->getController()->listFilters[$this->getController()->getRequest()->getParam('action')])) {
+        } elseif (
+            isset($this->getController()->listFilters) &&
+            !empty($this->getController()->listFilters[$this->getController()->getRequest()->getParam('action')])
+        ) {
             $filters = $this->getController()->listFilters[$this->getController()->getRequest()->getParam('action')];
         }
         if (empty($filters)) {
@@ -203,7 +206,12 @@ class ListFilterComponent extends Component
         if (!empty($request->getQuery('resetFilter'))) {
             $request->getSession()->delete($this->_getPersistendStorageKey('FormSession'));
 
-            return $this->getController()->getResponse()->withExpiredCookie(new Cookie($this->_getPersistendStorageKey('FormCookie')));
+            return $this
+                ->getController()
+                ->getResponse()
+                ->withExpiredCookie(
+                    new Cookie($this->_getPersistendStorageKey('FormCookie'))
+                );
         }
         $persistedFilterData = [];
         if ($this->getConfig('FormSession.active')) {
@@ -247,7 +255,12 @@ class ListFilterComponent extends Component
                 unset($persistedFilterData);
                 $request->getSession()->delete($this->_getPersistendStorageKey('FormSession'));
 
-                return $this->getController()->getResponse()->withExpiredCookie(new Cookie($this->_getPersistendStorageKey('FormCookie')));
+                return $this
+                    ->getController()
+                    ->getResponse()
+                    ->withExpiredCookie(
+                        new Cookie($this->_getPersistendStorageKey('FormCookie'))
+                    );
             }
 
             $persistedFilterData['Pagination'] = [];
@@ -456,7 +469,14 @@ class ListFilterComponent extends Component
             if ($options['searchType'] !== 'fulltext') {
                 $filterConditions[$conditionField] = $value;
             }
-            $this->getController()->setRequest($this->getController()->getRequest()->withData(\implode('.', ['Filter', $model, $field]), $viewValue));
+            $this
+                ->getController()
+                ->setRequest(
+                    $this
+                        ->getController()
+                        ->getRequest()
+                        ->withData(\implode('.', ['Filter', $model, $field]), $viewValue)
+                );
         }
 
         return $filterConditions;
