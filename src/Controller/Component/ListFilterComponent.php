@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace ListFilter\Controller\Component;
 
 use Cake\Controller\Component;
@@ -18,7 +18,6 @@ use Cake\Utility\Hash;
  */
 class ListFilterComponent extends Component
 {
-
     /**
      * Default array structure of a list filter.
      *
@@ -66,14 +65,14 @@ class ListFilterComponent extends Component
         }
 
         // Redirect on Form Cookie or Form Session Data
-        if ($response = $this->_handlePersistedFilters()) {
+        $response = $this->_handlePersistedFilters();
+        if ($response) {
             $event->setResult($response);
 
             return;
         }
 
         $request = $this->getController()->getRequest();
-
         // Redirect POST to GET, include FormSession and FormCookie Data
         if ($request->is('post') && !empty($request->getData('Filter'))) {
             $redirectUrl = $this->getRedirectUrlFromPostData($request->getData());
@@ -110,7 +109,7 @@ class ListFilterComponent extends Component
         $filterConditions = [];
         if (!empty($request->getQueryParams())) {
             $filterConditions = $this->_prepareFilterConditions($controllerListFilters);
-            $conditions = isset($this->getController()->paginate['conditions']) ? $this->getController()->paginate['conditions'] : [];
+            $conditions = $this->getController()->paginate['conditions'] ?? [];
 
             // Handle namespaced ListFilter
             if (isset($this->getController()->paginate[$this->getController()->getName()])) {
@@ -151,14 +150,18 @@ class ListFilterComponent extends Component
         $filters = [];
         if (method_exists($this->getController(), 'getListFilters')) {
             $filters = $this->getController()->getListFilters($this->getController()->getRequest()->getParam('action'));
-        } elseif (isset($this->getController()->listFilters) && !empty($this->getController()->listFilters[$this->getController()->getRequest()->getParam('action')])) {
+        } elseif (
+            isset($this->getController()->listFilters) &&
+            !empty($this->getController()->listFilters[$this->getController()->getRequest()->getParam('action')])
+        ) {
             $filters = $this->getController()->listFilters[$this->getController()->getRequest()->getParam('action')];
         }
         if (empty($filters)) {
             return [];
         }
         foreach ($filters['fields'] as &$fieldConfig) {
-            if (isset($fieldConfig['type']) && $fieldConfig['type'] == 'select'
+            if (
+                isset($fieldConfig['type']) && $fieldConfig['type'] == 'select'
                 && !isset($fieldConfig['searchType'])
             ) {
                 $fieldConfig['searchType'] = 'select';
@@ -174,7 +177,8 @@ class ListFilterComponent extends Component
                 $fieldConfig['inputOptions']['label'] = $fieldConfig['label'];
                 unset($fieldConfig['label']);
             }
-            if (isset($fieldConfig['searchType'])
+            if (
+                isset($fieldConfig['searchType'])
                 && in_array($fieldConfig['searchType'], ['select', 'multipleselect'])
             ) {
                 if (!isset($fieldConfig['inputOptions']['type'])) {
@@ -193,7 +197,7 @@ class ListFilterComponent extends Component
     /**
      * Handles filters which were persisted through cookies and / or the session.
      *
-     * @return Response|null
+     * @return \Cake\Http\Response|null
      */
     protected function _handlePersistedFilters(): ?Response
     {
@@ -202,7 +206,12 @@ class ListFilterComponent extends Component
         if (!empty($request->getQuery('resetFilter'))) {
             $request->getSession()->delete($this->_getPersistendStorageKey('FormSession'));
 
-            return $this->getController()->getResponse()->withExpiredCookie(new Cookie($this->_getPersistendStorageKey('FormCookie')));
+            return $this
+                ->getController()
+                ->getResponse()
+                ->withExpiredCookie(
+                    new Cookie($this->_getPersistendStorageKey('FormCookie'))
+                );
         }
         $persistedFilterData = [];
         if ($this->getConfig('FormSession.active')) {
@@ -246,7 +255,12 @@ class ListFilterComponent extends Component
                 unset($persistedFilterData);
                 $request->getSession()->delete($this->_getPersistendStorageKey('FormSession'));
 
-                return $this->getController()->getResponse()->withExpiredCookie(new Cookie($this->_getPersistendStorageKey('FormCookie')));
+                return $this
+                    ->getController()
+                    ->getResponse()
+                    ->withExpiredCookie(
+                        new Cookie($this->_getPersistendStorageKey('FormCookie'))
+                    );
             }
 
             $persistedFilterData['Pagination'] = [];
@@ -266,15 +280,14 @@ class ListFilterComponent extends Component
 
             return $this->getController()->getResponse()
                 ->withCookie(new Cookie(
-                        $this->_getPersistendStorageKey('FormCookie'),
-                        $persistedFilterData,
-                        null,
-                        '/',
-                        '',
-                        true,
-                        true
-                    )
-                );
+                    $this->_getPersistendStorageKey('FormCookie'),
+                    $persistedFilterData,
+                    null,
+                    '/',
+                    '',
+                    true,
+                    true
+                ));
         }
 
         return null;
@@ -349,7 +362,7 @@ class ListFilterComponent extends Component
             $urlParams = Hash::merge($cleanParams, $urlParams);
         }
 
-        return $urlParams;
+        return ['?' => $urlParams];
     }
 
     /**
@@ -412,7 +425,8 @@ class ListFilterComponent extends Component
 
             if ($this->getConfig('Validation.validateOptions')) {
                 // for non-multiselects, check if the value is present in the defined valid options
-                if (!empty($options['options'])
+                if (
+                    !empty($options['options'])
                     && $options['searchType'] !== 'multipleselect'
                     && !isset($validOptions[$value])
                 ) {
@@ -455,7 +469,14 @@ class ListFilterComponent extends Component
             if ($options['searchType'] !== 'fulltext') {
                 $filterConditions[$conditionField] = $value;
             }
-            $this->getController()->setRequest($this->getController()->getRequest()->withData(\implode('.', ['Filter', $model, $field]), $viewValue));
+            $this
+                ->getController()
+                ->setRequest(
+                    $this
+                        ->getController()
+                        ->getRequest()
+                        ->withData(\implode('.', ['Filter', $model, $field]), $viewValue)
+                );
         }
 
         return $filterConditions;
@@ -542,7 +563,7 @@ class ListFilterComponent extends Component
     {
         $vars = $this->getController()->viewBuilder()->getVars();
 
-        return isset($vars['filterActive']) ? $vars['filterActive'] : false;
+        return $vars['filterActive'] ?? false;
     }
 
     /**

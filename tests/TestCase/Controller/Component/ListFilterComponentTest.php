@@ -10,6 +10,9 @@ use Cake\Event\Event;
 use Cake\Network\Exception\NotFoundException;
 use Cake\Http\ServerRequest;
 use Cake\ORM\TableRegistry;
+use Cake\Routing\Route\DashedRoute;
+use Cake\Routing\RouteBuilder;
+use Cake\Routing\Router;
 use Cake\TestSuite\TestCase;
 use Cake\Utility\Hash;
 use ListFilter\Controller\Component\ListFilterComponent;
@@ -40,10 +43,12 @@ class ListFilterComponentTest extends TestCase
     public function testParamsRedirect()
     {
         $request = new ServerRequest([
-            'url' => 'controller_posts/index',
+            'url' => 'Foobar/index',
             'params' => [
+                'controller' => 'Foobar',
                 'action' => 'index',
-                '_method' => 'POST'
+                '_method' => 'POST',
+                'plugin' => null,
             ],
             'post' => [
                 'Filter' => [
@@ -54,9 +59,26 @@ class ListFilterComponentTest extends TestCase
                     ],
                 ],
             ],
+            'environment' => [
+                'REQUEST_METHOD' => 'POST',
+            ],
         ]);
 
-        $controller = new Controller($request);
+        Router::resetRoutes();
+
+        Router::defaultRouteClass(DashedRoute::class);
+
+        Router::scope('/', static function (RouteBuilder $routes) {
+            $routes->connect('/', ['controller' => 'Foobar', 'action' => 'index']);
+            $routes->connect('/Foobar/index', [], ['controller' => 'Foobar', 'action' => 'index']);
+
+            $routes->fallbacks(DashedRoute::class);
+        });
+
+        Router::setRequest($request);
+
+
+        $controller = new Controller($request, null, 'Foobar');
         $controller->listFilters = [
             'index' => [
                 'fields' => [
@@ -83,7 +105,7 @@ class ListFilterComponentTest extends TestCase
         $this->assertEquals(array_keys($controller->listFilters['index']['fields']), array_keys($ListFilter->getFilters()['fields']));
 
         // Check if the request is being redirected properly
-        $redirectUrl = parse_url($controller->getResponse()->getHeaderLine('Location'));
+        $redirectUrl = parse_url($event->getResult()->getHeaderLine('Location'));
 
         $this->assertArrayHasKey('query', $redirectUrl);
 

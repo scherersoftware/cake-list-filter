@@ -46,36 +46,6 @@ class ListFilterHelperTest extends TestCase
         parent::tearDown();
     }
 
-    /**
-     * Test renderFilterbox method
-     *
-     * @return void
-     */
-    public function testRenderFilterbox()
-    {
-        $viewVars = [
-            'filterActive' => true,
-            'filters' => [
-                'Posts.title' => [
-                    'searchType' => 'wildcard',
-                    'inputOptions' => [
-                        'type' => 'text',
-                        'label' => 'PostTitle'
-                    ]
-                ],
-            ]
-        ];
-        $this->View->set($viewVars);
-        $html = $this->ListFilter->renderFilterBox();
-
-        $expected = [
-            'form' => [
-                'method' => 'post', 'action' => '/',
-            ]
-        ];
-        #$this->assertHtml($expected, $html);
-    }
-
     public function testFilterWidgetOptionsMerge()
     {
         $viewVars = [

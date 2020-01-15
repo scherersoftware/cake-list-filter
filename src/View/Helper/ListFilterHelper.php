@@ -4,7 +4,6 @@ namespace ListFilter\View\Helper;
 
 use Cake\Routing\Router;
 use Cake\Utility\Hash;
-use Cake\View\Form\NullContext;
 use Cake\View\Helper;
 use Cake\View\StringTemplateTrait;
 
@@ -14,7 +13,6 @@ use Cake\View\StringTemplateTrait;
  */
 class ListFilterHelper extends Helper
 {
-
     use StringTemplateTrait;
 
     /**
@@ -165,7 +163,7 @@ class ListFilterHelper extends Helper
         $ret = [];
         switch ($options['searchType']) {
             case 'betweenDates':
-                $empty = isset($options['inputOptions']['empty']) ? $options['inputOptions']['empty'] : true;
+                $empty = $options['inputOptions']['empty'] ?? true;
 
                 $fromFieldName = 'Filter.' . $field . '_from';
                 $toFieldName = 'Filter.' . $field . '_to';
@@ -215,7 +213,7 @@ class ListFilterHelper extends Helper
                 break;
             default:
                 $inputOptions = Hash::merge([
-                    'options' => isset($options['options']) ? $options['options'] : false,
+                    'options' => $options['options'] ?? false,
                 ], $options['inputOptions']);
                 $ret[] = $this->Form->control('Filter.' . $field, $inputOptions);
                 break;
@@ -277,7 +275,12 @@ class ListFilterHelper extends Helper
      */
     public function openForm(): string
     {
-        $options = Hash::merge(['url' => $this->getView()->getRequest()->getParam('action')], $this->getConfig('formOptions'));
+        $options = Hash::merge(
+            [
+                'url' => $this->getView()->getRequest()->getParam('action'),
+            ],
+            $this->getConfig('formOptions')
+        );
 
         return $this->Form->create(null, $options);
     }
@@ -374,7 +377,7 @@ class ListFilterHelper extends Helper
         }
         $params = $this->getView()->getRequest()->getQueryParams();
         if (!empty($params)) {
-            foreach ($params as $field => $value) {
+            foreach (array_keys($params) as $field) {
                 if (strpos((string)$field, 'Filter-') === 0) {
                     unset($params[$field]);
                 }
@@ -436,7 +439,11 @@ class ListFilterHelper extends Helper
 
         $request = $this->getView()->getRequest();
 
-        if (!empty($options['useReferer']) && $request->referer(true) !== '/' && $request->referer(true) !== $request->getParam('action')) {
+        if (
+            !empty($options['useReferer']) &&
+            $request->referer(true) !== '/' &&
+            $request->referer(true) !== $request->getParam('action')
+        ) {
             $url = $request->referer(true);
         } elseif (empty($options['useReferer'])) {
             $url = $this->addListFilterParams($url);
@@ -449,7 +456,6 @@ class ListFilterHelper extends Helper
         if ($options['additionalClasses']) {
             $options['class'] .= ' ' . $options['additionalClasses'];
         }
-
 
         return $this->Html->link('<i class="fa fa-arrow-left"></i> ' . $title, $url, $options);
     }
