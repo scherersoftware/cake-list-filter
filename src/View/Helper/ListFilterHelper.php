@@ -277,7 +277,7 @@ class ListFilterHelper extends Helper
     {
         $options = Hash::merge(
             [
-                'url' => $this->getView()->getRequest()->getParam('action'),
+                'url' => $this->getView()->getRequest()->getUri()->getPath(),
             ],
             $this->getConfig('formOptions')
         );
@@ -384,7 +384,7 @@ class ListFilterHelper extends Helper
             }
         }
         $options = Hash::merge($this->getConfig('resetButtonOptions'), $options);
-        $url = Hash::merge($params, [
+        $url = Hash::merge($params, $this->getView()->getRequest()->getParam('pass'), [
             'resetFilter' => true,
         ]);
 

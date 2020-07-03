@@ -346,11 +346,6 @@ class ListFilterComponent extends Component
         }
 
         $request = $this->getController()->getRequest();
-
-        $passedArgs = $request->getParam('pass');
-        if (!empty($passedArgs)) {
-            $urlParams = Hash::merge($passedArgs, $urlParams);
-        }
         $params = $request->getQueryParams();
         if (!empty($params)) {
             $cleanParams = [];
@@ -362,7 +357,9 @@ class ListFilterComponent extends Component
             $urlParams = Hash::merge($cleanParams, $urlParams);
         }
 
-        return ['?' => $urlParams];
+        return Hash::merge($request->getParam('pass', []), [
+            '?' => $urlParams,
+        ]);
     }
 
     /**
@@ -469,6 +466,7 @@ class ListFilterComponent extends Component
             if ($options['searchType'] !== 'fulltext') {
                 $filterConditions[$conditionField] = $value;
             }
+
             $this
                 ->getController()
                 ->setRequest(
